@@ -1,19 +1,19 @@
 {
-    "latency_wait": 45,
+    "profile_name": "uge",
+    "restart_times": 1,
+    "default_mem_mb": 1024,
     "use_conda": true,
     "use_singularity": false,
+    "default_queue": "",
     "keep_going": true,
-    "restart_times": 1,
-    "jobs": 500,
-    "default_mem_mb": 1024,
+    "print_shell_commands": true,
+    "jobs": 100,
     "default_threads": 1,
     "default_cluster_logdir": "cluster_logs",
-    "default_queue": "",
+    "latency_wait": 45,
     "max_status_checks_per_second": 0.017,
     "max_jobs_per_second": 1,
     "log_status_checks": false,
     "max_qstat_checks": 3,
-    "time_between_qstat_checks": 60,
-    "print_shell_commands": true,
-    "profile_name": "uge"
+    "time_between_qstat_checks": 60
 }
