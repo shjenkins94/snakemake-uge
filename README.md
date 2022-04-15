@@ -63,22 +63,42 @@ pressing enter at the prompt will choose the default setting of that parameter
 for the profile.
 
 #### Submission parameters
-Parameter explanations as retrieved from `snakemake --help`.
+Parameter explanations as retrieved from `snakemake --help`. Parameters at the end should probably be left as is.
 
-* `latency_wait`
+* `profile_name`
 
-  **Default:** `45`
+  **Default**: `uge`
 
-  This sets the default `--latency-wait/--output-wait/-w` parameter in
-  `snakemake`.
+  The name to use for this profile. The directory for the profile is created as
+  this name i.e. `$HOME/.config/snakemake/<profile_name>`.
+  This is also the value you pass to `snakemake --profile <profile_name>`.
+
 
   ```text
-    --latency-wait SECONDS, --output-wait SECONDS, -w SECONDS
-                        Wait given seconds if an output file of a job is not
-                        present after the job finished. This helps if your
-                        filesystem suffers from latency (default 120).
   ```
 
+* `restart_times`
+
+  **Default**: `0`
+  
+  This sets the default `--restart-times` parameter in `snakemake`.
+
+  ```text
+    --restart-times RESTART_TIMES
+                        Number of times to restart failing jobs (defaults to
+                        0).
+  ```
+
+* `default_mem_mb`
+
+  **Default**: `1024`
+
+  This sets the default memory, in megabytes, for a `rule` being submitted to
+  the cluster without `mem_mb` set under `resources`.
+
+  See [below](#standard-rule-specific-cluster-resource-settings) for how to
+  overwrite this in a `rule`.
+  
 * `use_conda`
 
   **Default**: `True`  
@@ -91,7 +111,6 @@ Parameter explanations as retrieved from `snakemake --help`.
                         environment. If this flag is not set, the conda
                         directive is ignored.
   ```
-
 
 * `use_singularity`
 
@@ -106,6 +125,14 @@ Parameter explanations as retrieved from `snakemake --help`.
                          directive is ignored.
   ```
 
+* `default_queue`
+
+  **Default**: None
+
+  The default queue on the cluster to submit jobs to. If left unset, then the
+  default on your cluster will be used.
+  The `qsub` parameter that this controls is [`-q`][qsub-q].
+
 * `keep_going`
 
   **Default**: `True`  
@@ -117,17 +144,16 @@ Parameter explanations as retrieved from `snakemake --help`.
   --keep-going        Go on with independent jobs if a job fails.
   ```
 
-* `restart_times`
+* `print_shell_commands`
 
-  **Default**: `0`
-  
-  This sets the default `--restart-times` parameter in `snakemake`.
+  **Default**: `False`
+  **Valid options:** `False`, `True`
+
+  This sets the default ` --printshellcmds/-p` parameter in `snakemake`.
 
   ```text
-    --restart-times RESTART_TIMES
-                        Number of times to restart failing jobs (defaults to
-                        0).
-  ```
+    --printshellcmds, -p  Print out the shell commands that will be executed.
+    ```
 
 * `jobs`
 
@@ -144,16 +170,6 @@ Parameter explanations as retrieved from `snakemake --help`.
 
   In the context of a cluster, `-j` denotes the number of jobs submitted to the
   cluster at the same time<sup>[1][1]</sup>.
-
-* `default_mem_mb`
-
-  **Default**: `1024`
-
-  This sets the default memory, in megabytes, for a `rule` being submitted to
-  the cluster without `mem_mb` set under `resources`.
-
-  See [below](#standard-rule-specific-cluster-resource-settings) for how to
-  overwrite this in a `rule`.
 
 * `default_threads`
 
@@ -177,31 +193,21 @@ Parameter explanations as retrieved from `snakemake --help`.
   will be created.
 
 
-* `default_queue`
 
-  **Default**: None
+  during execution.
 
-  The default queue on the cluster to submit jobs to. If left unset, then the
-  default on your cluster will be used.
-  The `qsub` parameter that this controls is [`-q`][qsub-q].
+* `latency_wait`
 
-* `profile_name`
+  **Default:** `45`
 
-  **Default**: `uge`
-
-  The name to use for this profile. The directory for the profile is created as
-  this name i.e. `$HOME/.config/snakemake/<profile_name>`.
-  This is also the value you pass to `snakemake --profile <profile_name>`.
-
-* `print_shell_commands`
-
-  **Default**: `False`
-  **Valid options:** `False`, `True`
-
-  This sets the default ` --printshellcmds/-p` parameter in `snakemake`.
+  This sets the default `--latency-wait/--output-wait/-w` parameter in
+  `snakemake`.
 
   ```text
-    --printshellcmds, -p  Print out the shell commands that will be executed.
+    --latency-wait SECONDS, --output-wait SECONDS, -w SECONDS
+                        Wait given seconds if an output file of a job is not
+                        present after the job finished. This helps if your
+                        filesystem suffers from latency (default 120).
   ```
 
 #### Status check parameters
