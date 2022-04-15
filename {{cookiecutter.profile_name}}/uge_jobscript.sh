@@ -9,10 +9,6 @@ echo "-----------------------------"
 ( {exec_job} )
 EXIT_STATUS=$?  # get the exit status
 
-# print resource consumption
-echo "-----------------------------"
-qstat -j $JOB_ID | grep '^usage'
-
 # print exit status
 echo "-----------------------------"
 echo "EXIT_STATUS: $EXIT_STATUS"
