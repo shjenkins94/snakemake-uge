@@ -40,9 +40,9 @@ class StatusChecker:
         "d": FAILED,
         "E": FAILED,
         "FAIL": FAILED,
-        "EXIT_STATUS: 1": FAILED,
+        "1": FAILED,
         "SUCCESS": SUCCESS,
-        "EXIT_STATUS: 0": SUCCESS,
+        "0": SUCCESS,
     }
 
     """
@@ -52,22 +52,21 @@ class StatusChecker:
         pended, (P)reempted, t(ransfering), T(hreshold) or w(aiting).
 
     """
-
     def __init__(
         self,
         jobid: int,
-        outlog: str,
     ):
         self._jobid = jobid
-        self._outlog = outlog
 
     @property
     def jobid(self) -> int:
         return self._jobid
 
     @property
-    def outlog(self) -> str:
-        return self._outlog
+    def statlog(self) -> str:
+        project_statdir = CookieCutter.get_stat_dir()
+        return "{statdir}/{jobid}.exit".format(statdir=project_statdir,
+                                               jobid=self.jobid)
 
     @property
     def latency_wait(self) -> int:
@@ -90,10 +89,6 @@ class StatusChecker:
         return "qstat -j {jobid}".format(jobid=self.jobid)
 
     @property
-    def qacct_query_cmd(self) -> str:
-        return "qacct -j {jobid}".format(jobid=self.jobid)
-
-    @property
     def qdel_cmd(self) -> str:
         return "qdel -j {jobid}".format(jobid=self.jobid)
 
@@ -106,8 +101,8 @@ class StatusChecker:
                 return "finished"
             raise QstatError(
                     "qstat failed on job {jobid} with: {error}".format(
-                    jobid=self.jobid, error=error_stream
-                )
+                        jobid=self.jobid, error=error_stream
+                    )
             )
 
         if not output_stream:
@@ -130,49 +125,20 @@ class StatusChecker:
         # else:
         #    status = "running"
 
-    def _query_status_using_qacct(self) -> str:
-        returncode, output_stream, error_stream = OSLayer.run_process(
-            self.qacct_query_cmd
-        )
-
-        if returncode != 0:
-            raise QacctError(
-                    "qacct failed on job {jobid} with: {error}".format(
-                    jobid=self.jobid, error=error_stream
-                )
-            )
-
-        if not output_stream:
-            raise QacctError(
-                "qacct failed on job {jobid} with empty output".format(
-                    jobid=self.jobid,
-                )
-            )
-        status = self._qacct_job_state(output_stream)
-        if status not in self.STATUS_TABLE.keys():
-            raise KeyError(
-                "Unknown job status '{status}' for {jobid}".format(
-                    status=status, jobid=self.jobid)
-            )
-        return self.STATUS_TABLE[status]
-
     def _query_status_using_cluster_log(self) -> str:
         try:
-            lastline = OSLayer.tail(self.outlog, num_lines=1)
+            lastline = OSLayer.tail(self.statlog, num_lines=1)
         except (FileNotFoundError, ValueError):
             return self.STATUS_TABLE["r"]
 
         status = lastline[0].strip().decode("utf-8")
-        if status.startswith('EXIT_STATUS'):
-            if status not in self.STATUS_TABLE.keys():
-                raise KeyError(
-                                "Unknown job status '{status}' for {jobid}".format(
-                                    status=status, jobid=self.jobid)
-                                )
-            else:
-                return self.STATUS_TABLE[status]
+        if status not in self.STATUS_TABLE.keys():
+            raise KeyError(
+                            "Unknown job status '{status}' for {jobid}".format(
+                                status=status, jobid=self.jobid)
+                            )
         else:
-            return self.STATUS_TABLE["r"]
+            return self.STATUS_TABLE[status]
 
     @staticmethod
     def _extract_time(line, time_name) -> float:
@@ -199,23 +165,6 @@ class StatusChecker:
                 break  # exit for loop
         return state
 
-    @staticmethod
-    def _qacct_job_state(output_stream) -> str:
-        exit_state = ""
-        failed = ""
-
-        for line in output_stream.split("\n"):
-            if line.startswith("failed"):
-                failed = line.strip()[-1]
-            if line.startswith("exit_status"):
-                exit_state = line.strip()[-1]
-            if failed != "" and exit_state != "":
-                break
-        if failed == "0" and exit_state == "0":
-            return "SUCCESS"
-        else:
-            return "FAIL"
-
     def _handle_hung_qstat(self, output_stream) -> str:
         for line in output_stream.split("\n"):
             if line.startswith("usage"):
@@ -241,12 +190,14 @@ class StatusChecker:
                 break  # succeeded on getting the status
             except QstatError as error:
                 if self.log_status_checks:
-                    print(
-                        "[Predicted exception] QstatError: {error}".format(
-                            error=error
-                        ),
-                        file=sys.stderr,
-                    )
+                    if error is None:
+                        print("No result for Qstat.", file=sys.stderr)
+                    else:
+                        print(
+                            "[Predicted exception] "
+                            "QstatError: {error}".format(error=error),
+                            file=sys.stderr,
+                            )
                     print("Resuming...", file=sys.stderr)
                 time.sleep(self.wait_between_tries)
 
@@ -265,7 +216,8 @@ class StatusChecker:
             if self.log_status_checks:
                 if status is None:
                     print(
-                        "qstat for job {jobid} failed {try_times} times.".format(
+                        "qstat for job {jobid} failed "
+                        "{try_times} times.".format(
                             jobid=self.jobid,
                             try_times=self.max_status_checks
                         ),
@@ -273,53 +225,25 @@ class StatusChecker:
                     )
                 if status == "finished":
                     print(
-                            "Job {jobid} finished, check status via qacct".format(
+                            "Job {jobid} finished, check status via "
+                            "cluster status log".format(
                                 jobid=self.jobid),
                             file=sys.stderr
                         )
                 print(
-                        "Checking exit status for job {jobid} via qacct".format(
+                        "Checking exit status for job {jobid} via "
+                        "cluster status log".format(
                             jobid=self.jobid),
                         file=sys.stderr
                         )
             #time.sleep(self.latency_wait)
 
-            try:
-                status = self._query_status_using_qacct()
-            except QacctError as error:
-                if self.log_status_checks:
-                    print(
-                        "[Predicted exception] QacctError: {error}".format(
-                            error=error
-                        ),
-                        file=sys.stderr,
-                    )
-
-            except KeyError as error:
-                if self.log_status_checks:
-                    print(
-                        "[Predicted exception] {error}".format(
-                            error=error
-                        ),
-                        file=sys.stderr,
-                    )
-
-        if status is None:
-            if self.log_status_checks:
-                print(
-                    "qacct failed for job {jobid}. Checking cluster log".format(
-                        jobid=self.jobid),
-                    file=sys.stderr,
-                )
             status = self._query_status_using_cluster_log()
-
         return status
 
-
 if __name__ == "__main__":
-    jobid = int(sys.argv[1])
-    outlog = sys.argv[2]
-    uge_status_checker = StatusChecker(jobid, outlog)
+    jobid = sys.argv[1]
+    uge_status_checker = StatusChecker(jobid)
     try:
         print(uge_status_checker.get_status())
     except KeyboardInterrupt:

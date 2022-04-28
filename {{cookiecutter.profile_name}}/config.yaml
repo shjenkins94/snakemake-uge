@@ -1,6 +1,12 @@
 cluster: "uge_submit.py"
 cluster-status: "uge_status.py"
 jobscript: "uge_jobscript.sh"
+{%- if cookiecutter.directory != "" %}
+directory: "{{cookiecutter.directory}}"
+{%- endif %}
+{%- if cookiecutter.conda_prefix != "" %}
+conda-prefix: "{{cookiecutter.conda_prefix}}"
+{%- endif %}
 restart-times: "{{cookiecutter.restart_times}}"
 use-conda: "{{cookiecutter.use_conda}}"
 use-singularity: "{{cookiecutter.use_singularity}}"

@@ -14,8 +14,8 @@ class TailError(Exception):
 class OSLayer:
     """
     This class provides an abstract layer to communicating with the OS.
-    Its main purpose is to enable OS operations mocking, so we don't actually need to
-    make file operations or create processes.
+    Its main purpose is to enable OS operations mocking, so we don't actually
+    need to make file operations or create processes.
     """
 
     @staticmethod
@@ -30,7 +30,10 @@ class OSLayer:
     @staticmethod
     def run_process(cmd: str) -> Tuple[stdout, stderr]:
         completed_process = subprocess.run(
-            cmd, check=False, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+            cmd, check=False,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
         )
         return (
             completed_process.returncode,

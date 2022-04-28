@@ -137,7 +137,7 @@ class Submitter:
     def jobname(self) -> str:
         if self.is_group_jobtype:
             return "{groupid}_{jobid}".format(groupid=self.groupid,
-                    jobid=self.jobid)
+                                              jobid=self.jobid)
         return self.cluster.get(
             "jobname",
             "smk.{rule_name}.{wildcards_str}".format(
@@ -155,7 +155,9 @@ class Submitter:
     def logdir(self) -> Path:
         project_logdir = CookieCutter.get_log_dir()
         return Path(project_logdir) / self.rule_name
-
+        
+# HERE IS THE PROBLEM REMOVE OUTLOG FROM EVERYTHING
+# Here it's not a problem, it's just the name of a file like errlog
     @property
     def outlog(self) -> Path:
         if self.is_group_jobtype:
@@ -169,7 +171,8 @@ class Submitter:
             return self.logdir / "groupid{groupid}_jobid{jobid}.err".format(
                 groupid=self.groupid, jobid=self.jobid)
         return self.logdir / "{jobname}.err".format(jobname=self.jobname)
-
+# HERE IS THE PROBLEM REMOVE OUTLOG FROM EVERYTHING
+# Here should also not be a problem.
     @property
     def jobinfo_cmd(self) -> str:
         return '-o "{out_log}" -e "{err_log}" -N "{jobname}"'.format(
@@ -195,7 +198,7 @@ class Submitter:
     @property
     def submit_cmd(self) -> str:
         params = [
-            "qsub -cwd",
+            "qsub -cwd -terse -V",
             self.resources_cmd,
             self.jobinfo_cmd,
             self.queue_cmd,
@@ -214,24 +217,23 @@ class Submitter:
 
     def _submit_cmd_and_get_external_job_id(self) -> int:
         returncode, output_stream, error_stream = OSLayer.run_process(self.submit_cmd)
-        match = re.search(r"Your job (\d+) .*", output_stream)
-        jobid = match.group(1)
+        jobid = output_stream
         return int(jobid)
-
-    def _get_parameters_to_status_script(self, external_job_id: int) -> str:
-        return "{external_job_id} {outlog}".format(
-            external_job_id=external_job_id, outlog=self.outlog
-        )
+# HERE IS THE PROBLEM REMOVE OUTLOG FROM EVERYTHING
+    # def _get_parameters_to_status_script(self, external_job_id: int) -> str:
+    #     return "{external_job_id} {outlog}".format(
+    #         external_job_id=external_job_id, outlog=self.outlog
+    #     )
 
     def submit(self):
         self._create_logdir()
         self._remove_previous_logs()
         try:
             external_job_id = self._submit_cmd_and_get_external_job_id()
-            parameters_to_status_script = self._get_parameters_to_status_script(
-                external_job_id
-            )
-            OSLayer.print(parameters_to_status_script)
+            # parameters_to_status_script = self._get_parameters_to_status_script(
+            #     external_job_id
+            # )
+            OSLayer.print(external_job_id)
         except subprocess.CalledProcessError as error:
             raise QsubInvocationError(error)
         except AttributeError as error:

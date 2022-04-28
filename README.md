@@ -73,8 +73,36 @@ Parameter explanations as retrieved from `snakemake --help`. Parameters at the e
   this name i.e. `$HOME/.config/snakemake/<profile_name>`.
   This is also the value you pass to `snakemake --profile <profile_name>`.
 
+* `directory`
+
+  **Default**: None
+
+  This sets the working directory `--directory/-d` for `snakemake`.
+
+```text
+--directory DIR, -d DIR
+                      Specify working directory (relative paths in the 
+                      snakefile will use this as their origin). (default: None)
+```
+
+* `conda_prefix`
+
+  **Default:** None
+
+  This sets the directory under which conda environments are stored.under which cluster log files are written.
 
   ```text
+    --conda-prefix DIR    Specify a directory in which the 'conda' and 
+                          'conda-archive' directories are created. These are 
+                          used to store conda environments and their archives,
+                          respectively. If not supplied, the value is set to
+                          the '.snakemake' directory relative to the
+                          invocation directory. If supplied, the `--use-conda`
+                          flag must also be set. The value may be given as a 
+                          relative path, which will be extrapolated to the 
+                          invocation directory, or as an absolute path. The 
+                          value can also be provided via the environment 
+                          variable $SNAKEMAKE_CONDA_PREFIX. (default: None)
   ```
 
 * `restart_times`
@@ -192,8 +220,11 @@ Parameter explanations as retrieved from `snakemake --help`. Parameters at the e
   relative to the working directory of the pipeline. If it does not exist, it
   will be created.
 
+* `default_cluster_statdir`
 
+  **Default**: `".cluster_status"`
 
+  This sets the directory under which job statuses for cluster jobs are stored
   during execution.
 
 * `latency_wait`

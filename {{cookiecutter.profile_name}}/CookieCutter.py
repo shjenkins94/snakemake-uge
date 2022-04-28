@@ -35,4 +35,6 @@ class CookieCutter:
     def get_time_between_qstat_checks() -> float:
         return float("{{cookiecutter.time_between_qstat_checks}}")
 
-
+    @staticmethod
+    def get_stat_dir() -> str:
+        return "{{cookiecutter.default_cluster_statdir}}"
