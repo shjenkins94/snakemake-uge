@@ -76,7 +76,7 @@ class TestSubmitter(unittest.TestCase):
         self.assertEqual(uge_submit.queue_cmd, "-q q1")
         self.assertEqual(
             uge_submit.submit_cmd,
-            "qsub -cwd -pe mpi 4 -l h_vmem={mem}G -l m_mem_free={mem}G "
+            "qsub -cwd -terse -V -pe mpi 4 -l h_vmem={mem}G -l m_mem_free={mem}G "
             "{jobinfo} -q q1 cluster_opt_1 cluster_opt_2 cluster_opt_3 "
             "real_jobscript.sh".format(
                 mem=expected_per_thread_final, jobinfo=expected_jobinfo_cmd
@@ -112,7 +112,7 @@ class TestSubmitter(unittest.TestCase):
         uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
         actual = uge_submit._submit_cmd_and_get_external_job_id()
         self.assertEqual(actual, expected)
-
+    
     @patch.object(OSLayer, "run_process", return_value=("", "", ""))
     @patch.object(CookieCutter, "get_log_dir", return_value="logdir")
     @patch.object(CookieCutter, "get_default_mem_mb", return_value=1000)
@@ -129,7 +129,7 @@ class TestSubmitter(unittest.TestCase):
         ]
         uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
         self.assertRaises(JobidNotFoundError, uge_submit.submit)
-
+    
     @patch.object(CookieCutter, "get_log_dir", return_value="logdir")
     @patch.object(CookieCutter, "get_default_mem_mb", return_value=1000)
     @patch.object(CookieCutter, "get_default_threads", return_value=8)
@@ -156,9 +156,9 @@ class TestSubmitter(unittest.TestCase):
             "cluster_opt_3",
             "real_jobscript.sh",
         ]
-
+    
         expected_mem = 5
-        
+    
         expected_mem = 5
         expected_threads = 4
         expected_per_thread_decimal = round(expected_mem / expected_threads, 2)
@@ -190,15 +190,13 @@ class TestSubmitter(unittest.TestCase):
         remove_file_mock.assert_any_call(expected_outlog)
         remove_file_mock.assert_any_call(expected_errlog)
         run_process_mock.assert_called_once_with(
-            "qsub -cwd -pe mpi 4 -l h_vmem={mem}G -l m_mem_free={mem}G "
+            "qsub -cwd -terse -V -pe mpi 4 -l h_vmem={mem}G -l m_mem_free={mem}G "
             "{jobinfo} -q q1 cluster_opt_1 cluster_opt_2 cluster_opt_3 "
             "real_jobscript.sh".format(
                 mem=expected_per_thread_final, jobinfo=expected_jobinfo_cmd
             )
         )
-        print_mock.assert_called_once_with(
-            "123456 {outlog}".format(outlog=expected_outlog)
-        )
+        print_mock.assert_called_once_with(123456)
 
     @patch.object(CookieCutter, "get_log_dir", return_value="logdir")
     @patch.object(CookieCutter, "get_default_mem_mb", return_value=1000)
@@ -228,7 +226,7 @@ class TestSubmitter(unittest.TestCase):
         ]
         uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
         self.assertRaises(QsubInvocationError, uge_submit.submit)
-
+    
         expected_wildcards_str = "0"
         expected_rule_name = "search_fasta_on_index"
         expected_jobname = "smk.{rule}.{wc}".format(
@@ -245,7 +243,7 @@ class TestSubmitter(unittest.TestCase):
         )
         remove_file_mock.assert_any_call(expected_outlog)
         remove_file_mock.assert_any_call(expected_errlog)
-
+    
     @patch.object(CookieCutter, "get_default_queue", return_value="queue")
     def test_get_queue_cmd_returns_cookiecutter_default_if_no_cluster_config(
         self, *mock
@@ -262,9 +260,9 @@ class TestSubmitter(unittest.TestCase):
         # sorry, hacky but couldn't figure out how to mock read_job_properties
         del uge_submit._job_properties["cluster"]
         actual = uge_submit.queue_cmd
-
+    
         self.assertEqual(actual, expected)
-
+    
     @patch.object(CookieCutter, "get_log_dir", return_value="logdir")
     @patch.object(CookieCutter, "get_default_mem_mb", return_value=1000)
     @patch.object(CookieCutter, "get_default_threads", return_value=8)
@@ -287,19 +285,21 @@ class TestSubmitter(unittest.TestCase):
             cluster_cmds=argv[1:-1],
             uge_config=uge_config,
         )
-
+    
         expected_wildcards_str = "0"
         expected_rule_name = "search_fasta_on_index"
         expected_jobname = "smk.{rule}.{wc}".format(
             rule=expected_rule_name, wc=expected_wildcards_str
         )
         expected_logdir = Path("logdir") / uge_submit.rule_name
+        # HERE IS THE PROBLEM REMOVE OUTLOG FROM EVERYTHING
         expected_outlog = expected_logdir / "{jobname}.out".format(
             jobname=expected_jobname
         )
         expected_errlog = expected_logdir / "{jobname}.err".format(
             jobname=expected_jobname
         )
+        # HERE IS THE PROBLEM REMOVE OUTLOG FROM EVERYTHING
         expected_jobinfo_cmd = (
             '-o "{outlog}" -e "{errlog}" -N "{jobname}"'
         ).format(
@@ -312,8 +312,7 @@ class TestSubmitter(unittest.TestCase):
         expected_per_thread_decimal = round(expected_mem / expected_threads, 2)
         expected_per_thread_final = math.ceil(expected_per_thread_decimal)
         expected = (
-            "qsub -cwd -pe mpi 4 -l h_vmem={mem}G -l m_mem_free={mem}G "
-
+            "qsub -cwd -terse -V -pe mpi 4 -l h_vmem={mem}G -l m_mem_free={mem}G "
             "{jobinfo} -q q1 cluster_opt_1 cluster_opt_2 cluster_opt_3 "
             "-q queue -gpu - -P project "
             "real_jobscript.sh".format(
@@ -322,7 +321,7 @@ class TestSubmitter(unittest.TestCase):
         )
         actual = uge_submit.submit_cmd
         assert actual == expected
-
+    
     def test_rule_name_for_group_returns_groupid_instead(self):
         jobscript = Path(
             tempfile.NamedTemporaryFile(delete=False, suffix=".sh").name
@@ -339,12 +338,12 @@ class TestSubmitter(unittest.TestCase):
         )
         jobscript.write_text(script_content)
         uge_submit = Submitter(jobscript=str(jobscript))
-
+    
         actual = uge_submit.rule_name
         expected = "mygroup"
-
+    
         assert actual == expected
-
+    
     def test_is_group_jobtype_when_group_is_present(self):
         jobscript = Path(
             tempfile.NamedTemporaryFile(delete=False, suffix=".sh").name
@@ -361,9 +360,9 @@ class TestSubmitter(unittest.TestCase):
         )
         jobscript.write_text(script_content)
         uge_submit = Submitter(jobscript=str(jobscript))
-
+    
         assert uge_submit.is_group_jobtype
-
+    
     def test_is_group_jobtype_when_group_is_not_present(self):
         jobscript = Path(
             tempfile.NamedTemporaryFile(delete=False, suffix=".sh").name
@@ -376,9 +375,9 @@ class TestSubmitter(unittest.TestCase):
         )
         jobscript.write_text(script_content)
         uge_submit = Submitter(jobscript=str(jobscript))
-
+    
         assert not uge_submit.is_group_jobtype
-
+    
     def test_jobid_for_group_returns_first_segment_of_uuid(self):
         jobscript = Path(
             tempfile.NamedTemporaryFile(delete=False, suffix=".sh").name
@@ -395,12 +394,12 @@ class TestSubmitter(unittest.TestCase):
         )
         jobscript.write_text(script_content)
         uge_submit = Submitter(jobscript=str(jobscript))
-
+    
         actual = uge_submit.jobid
         expected = "a9722c33"
-
+    
         assert actual == expected
-
+    
     def test_jobid_for_non_group_returns_job_number(self):
         jobscript = Path(
             tempfile.NamedTemporaryFile(delete=False, suffix=".sh").name
@@ -418,12 +417,12 @@ class TestSubmitter(unittest.TestCase):
         )
         jobscript.write_text(script_content)
         uge_submit = Submitter(jobscript=str(jobscript))
-
+    
         actual = uge_submit.jobid
         expected = "2"
-
+    
         assert actual == expected
-
+    
     def test_jobname_for_non_group(self):
         jobscript = Path(
             tempfile.NamedTemporaryFile(delete=False, suffix=".sh").name
@@ -441,12 +440,12 @@ class TestSubmitter(unittest.TestCase):
         )
         jobscript.write_text(script_content)
         uge_submit = Submitter(jobscript=str(jobscript))
-
+    
         actual = uge_submit.jobname
         expected = "smk.search.0"
-
+    
         assert actual == expected
-
+    
     def test_jobname_for_group(self):
         jobscript = Path(
             tempfile.NamedTemporaryFile(delete=False, suffix=".sh").name
@@ -463,10 +462,10 @@ class TestSubmitter(unittest.TestCase):
         )
         jobscript.write_text(script_content)
         uge_submit = Submitter(jobscript=str(jobscript))
-
+    
         actual = uge_submit.jobname
         expected = "mygroup_a9722c33"
-
+    
         assert actual == expected
 
 

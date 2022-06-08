@@ -42,7 +42,7 @@ class StatusChecker:
         "FAIL": FAILED,
         "1": FAILED,
         "SUCCESS": SUCCESS,
-        "0": SUCCESS,
+        "0": SUCCESS
     }
 
     """
