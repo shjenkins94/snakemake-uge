@@ -123,12 +123,15 @@ class StatusChecker:
         for _ in range(self.max_status_checks):
             try:
                 status_key = self._query_status_using_cluster_log()
-            except FileNotFoundError:
-                pass
                 if self.log_status_checks:
-                    print("No status log, keep going...", file=sys.stderr)
+                    print("Status log found.", file=sys.stderr)
+            except FileNotFoundError:
+                if self.log_status_checks:
+                    print("No status log, trying qstat...", file=sys.stderr)
                 try:
                     status_key = self._query_status_using_qstat()
+                    if self.log_status_checks:
+                        print("Qstat status found.", file=sys.stderr)
                 except QstatError as error:
                     if self.log_status_checks:
                         print(
