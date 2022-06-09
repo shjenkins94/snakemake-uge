@@ -2,7 +2,6 @@
 
 import sys
 import time
-import re
 from pathlib import Path
 
 if not __name__.startswith("tests.src."):
@@ -15,10 +14,6 @@ else:
 
 
 class QstatError(Exception):
-    pass
-
-
-class QacctError(Exception):
     pass
 
 
@@ -64,9 +59,7 @@ class StatusChecker:
 
     @property
     def statlog(self) -> str:
-        project_statdir = CookieCutter.get_stat_dir()
-        return "{statdir}/{jobid}.exit".format(statdir=project_statdir,
-                                               jobid=self.jobid)
+        return f"{CookieCutter.get_stat_dir()}/{self.jobid}.exit"
 
     @property
     def latency_wait(self) -> int:
@@ -85,45 +78,37 @@ class StatusChecker:
         return CookieCutter.get_log_status_checks()
 
     @property
-    def qstat_query_cmd(self) -> str:
+    def qstatj_query_cmd(self) -> str:
         return "qstat -j {jobid}".format(jobid=self.jobid)
 
     @property
     def qdel_cmd(self) -> str:
-        return "qdel -j {jobid}".format(jobid=self.jobid)
+        return f"qdel -j {self.jobid}"
+
+    def _qstat_job_state(self, output_stream) -> str:
+        state = ""
+        if output_stream:
+            for line in output_stream.split("\n"):
+                if str(self.jobid) == line.split()[0]:
+                    state = line.split()[4]
+                    break  # exit for loop
+        return state
 
     def _query_status_using_qstat(self) -> str:
-        returncode, output_stream, error_stream = OSLayer.run_process(
-            self.qstat_query_cmd
-        )
-        if returncode != 0:
-            if error_stream.startswith("Following jobs do not exist"):
-                return "finished"
-            raise QstatError(
-                    "qstat failed on job {jobid} with: {error}".format(
-                        jobid=self.jobid, error=error_stream
-                    )
-            )
-
-        if not output_stream:
+        returncode, output_stream, error_stream = OSLayer.run_process("qstat")
+        status = self._qstat_job_state(output_stream)
+        if not status:
             raise QstatError(
                 "qstat failed on job {jobid} with empty output".format(
                     jobid=self.jobid,
                 )
             )
-        status = self._qstat_job_state(output_stream)
         if status not in self.STATUS_TABLE.keys():
             raise KeyError(
                 "Unknown job status '{status}' for {jobid}".format(
                     status=status, jobid=self.jobid)
             )
         return self.STATUS_TABLE[status]
-
-        # hung_status = self._handle_hung_qstat(output_stream)
-        # if hung_status or self._qstat_error(output_stream):
-        #    status = "failed"
-        # else:
-        #    status = "running"
 
     def _query_status_using_cluster_log(self) -> str:
         try:
@@ -139,48 +124,6 @@ class StatusChecker:
                             )
         else:
             return self.STATUS_TABLE[status]
-
-    @staticmethod
-    def _extract_time(line, time_name) -> float:
-        """ Extracts time elapsed in seconds from usage line for given name
-        """
-        result = re.search(f"{time_name}=([^,]+)(,|$,\n)", line)
-        if not result:
-            return 0
-        time_str = re.search(f"{time_name}=([^,]+)(,|$,\n)", line).group(1)
-        elapsed_time = 0
-        multiplier = 1
-        multipliers = (1, 60, 60, 24)
-        for t, m in zip(reversed(time_str.split(":")), multipliers):
-            elapsed_time += multiplier * m * int(t)
-            multiplier *= m
-        return elapsed_time
-
-    @staticmethod
-    def _qstat_job_state(output_stream) -> str:
-        state = ""
-        for line in output_stream.split("\n"):
-            if line.startswith("job_state"):
-                state = line.strip()[-2:].strip()
-                break  # exit for loop
-        return state
-
-    def _handle_hung_qstat(self, output_stream) -> str:
-        for line in output_stream.split("\n"):
-            if line.startswith("usage"):
-                wallclock = self._extract_time(line, "wallclock")
-                if wallclock < self.cpu_hung_min_time * 60:
-                    return False
-                cpu = self._extract_time(line, "cpu")
-                if (cpu / wallclock) < self.cpu_hung_max_ratio:
-                    (
-                        returncode,
-                        output_stream,
-                        error_stream,
-                    ) = OSLayer.run_process(self.qdel_cmd)
-                    return True
-                return False
-            return False
 
     def get_status(self) -> str:
         status = None
@@ -236,10 +179,9 @@ class StatusChecker:
                             jobid=self.jobid),
                         file=sys.stderr
                         )
-            #time.sleep(self.latency_wait)
-
             status = self._query_status_using_cluster_log()
         return status
+
 
 if __name__ == "__main__":
     jobid = sys.argv[1]
