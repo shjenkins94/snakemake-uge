@@ -79,7 +79,7 @@ class StatusChecker:
 
     @property
     def qstatj_query_cmd(self) -> str:
-        return "qstat -j {jobid}".format(jobid=self.jobid)
+        return f"qstat -j {self.jobid}"
 
     @property
     def qdel_cmd(self) -> str:
@@ -94,92 +94,69 @@ class StatusChecker:
                     break  # exit for loop
         return state
 
+    def _status_key_check(self, status) -> str:
+        if status not in self.STATUS_TABLE.keys():
+            raise KeyError(
+                f"Unknown job status '{status}' for {self.jobid}"
+            )
+        return self.STATUS_TABLE[status]
+
     def _query_status_using_qstat(self) -> str:
         returncode, output_stream, error_stream = OSLayer.run_process("qstat")
         status = self._qstat_job_state(output_stream)
         if not status:
             raise QstatError(
-                "qstat failed on job {jobid} with empty output".format(
-                    jobid=self.jobid,
-                )
+                f"qstat failed on job {self.jobid} with empty output"
             )
-        if status not in self.STATUS_TABLE.keys():
-            raise KeyError(
-                "Unknown job status '{status}' for {jobid}".format(
-                    status=status, jobid=self.jobid)
-            )
-        return self.STATUS_TABLE[status]
+        return status
 
     def _query_status_using_cluster_log(self) -> str:
-        try:
-            lastline = OSLayer.tail(self.statlog, num_lines=1)
-        except (FileNotFoundError, ValueError):
-            return self.STATUS_TABLE["r"]
-
+        lastline = OSLayer.tail(self.statlog, num_lines=1)
         status = lastline[0].strip().decode("utf-8")
-        if status not in self.STATUS_TABLE.keys():
-            raise KeyError(
-                            "Unknown job status '{status}' for {jobid}".format(
-                                status=status, jobid=self.jobid)
-                            )
-        else:
-            return self.STATUS_TABLE[status]
+        return status
 
     def get_status(self) -> str:
+        status_key = None
         status = None
+        if self.log_status_checks:
+            print("Checking for status log...", file=sys.stderr)
         for _ in range(self.max_status_checks):
             try:
-                status = self._query_status_using_qstat()
-                break  # succeeded on getting the status
-            except QstatError as error:
+                status_key = self._query_status_using_cluster_log()
+            except FileNotFoundError:
+                pass
                 if self.log_status_checks:
-                    if error is None:
-                        print("No result for Qstat.", file=sys.stderr)
-                    else:
+                    print("No status log, keep going...", file=sys.stderr)
+                try:
+                    status_key = self._query_status_using_qstat()
+                except QstatError as error:
+                    if self.log_status_checks:
                         print(
-                            "[Predicted exception] "
-                            "QstatError: {error}".format(error=error),
+                            f"[Predicted exception] QstatError: {error}",
                             file=sys.stderr,
                             )
-                    print("Resuming...", file=sys.stderr)
-                time.sleep(self.wait_between_tries)
-
+                        print("Resuming...", file=sys.stderr)
+                    time.sleep(self.wait_between_tries)
+                    continue
+            try:
+                status = self._status_key_check(status_key)
+                break  # succeeded on getting the status
             except KeyError as error:
                 if self.log_status_checks:
                     print(
-                        "[Predicted exception] {error}".format(
-                            error=error
-                        ),
+                        f"[Predicted exception] {error}",
                         file=sys.stderr,
                     )
                     print("Resuming...", file=sys.stderr)
                 time.sleep(self.wait_between_tries)
-
-        if status is None or status == "finished":
+        if status is None:
             if self.log_status_checks:
-                if status is None:
-                    print(
-                        "qstat for job {jobid} failed "
-                        "{try_times} times.".format(
-                            jobid=self.jobid,
-                            try_times=self.max_status_checks
-                        ),
-                        file=sys.stderr,
-                    )
-                if status == "finished":
-                    print(
-                            "Job {jobid} finished, check status via "
-                            "cluster status log".format(
-                                jobid=self.jobid),
-                            file=sys.stderr
-                        )
                 print(
-                        "Checking exit status for job {jobid} via "
-                        "cluster status log".format(
-                            jobid=self.jobid),
-                        file=sys.stderr
-                        )
-            status = self._query_status_using_cluster_log()
+                    f"Failed to get status for {self.jobid} "
+                    f"{self.max_status_checks} times",
+                    file=sys.stderr,
+                )
+            status = "failed"
         return status
 
 

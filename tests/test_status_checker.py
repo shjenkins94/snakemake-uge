@@ -115,21 +115,46 @@ class TestStatusChecker(unittest.TestCase):
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
     @patch.object(
         CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(
+        CookieCutter, "get_stat_dir", return_value=".cluster_status")
+    @patch.object(OSLayer, "tail", side_effect=FileNotFoundError)
     @patch.object(OSLayer, "run_process")
-    def test_get_status_qstat_fails_twice_succeeds_third_job_status_is_success(
-        self, run_process_mock, *othermocks
+    def test_get_status_qstat_succeeds_third_job_status_is_success(
+        self, run_process_mock, tail_mock, *othermocks
     ):
         run_process_mock.side_effect = [
-            QstatError,
-            KeyError("test"),
-            (0, qstat_line("r"), "")
-        ]
+            QstatError, (0, qstat_line("test"), ""), (0, qstat_line("r"), "")]
+
         uge_status_checker = StatusChecker(123)
         actual = uge_status_checker.get_status()
         expected = "running"
         self.assertEqual(actual, expected)
         assert_called_n_times_with_same_args(
+            tail_mock, 3, [".cluster_status/123.exit"] * 3
+        )
+        assert_called_n_times_with_same_args(
             run_process_mock, 3, ["qstat"] * 3
+        )
+
+    @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
+    @patch.object(
+        CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(
+        CookieCutter, "get_stat_dir", return_value=".cluster_status")
+    @patch.object(OSLayer, "tail")
+    @patch.object(OSLayer, "run_process", side_effect=QstatError)
+    def test_get_status_cluster_log_succeeds_third_job_status_is_success(
+        self, run_process_mock, tail_mock, *othermocks
+    ):
+        tail_mock.side_effect = [FileNotFoundError, [b'test'], [b'0']]
+
+        uge_status_checker = StatusChecker(123)
+        actual = uge_status_checker.get_status()
+        expected = "success"
+        self.assertEqual(actual, expected)
+        run_process_mock.assert_called_once_with("qstat")
+        assert_called_n_times_with_same_args(
+            tail_mock, 3, [".cluster_status/123.exit"] * 3
         )
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=1)
@@ -139,17 +164,15 @@ class TestStatusChecker(unittest.TestCase):
     @patch.object(
         CookieCutter, "get_stat_dir", return_value=".cluster_status")
     @patch.object(OSLayer, "tail", return_value=([b'0']))
-    @patch.object(OSLayer, "run_process", return_value=(1, "", ""))
-    def test_get_status_qstat_fail_using_log_job_status_is_success(
-        self, run_process_mock, tail_mock, *othermocks
+    def test_get_status_cluster_log_says_process_is_0_success(
+        self, tail_mock, *othermocks
     ):
         uge_status_checker = StatusChecker(123)
         actual = uge_status_checker.get_status()
         expected = "success"
         self.assertEqual(actual, expected)
-        run_process_mock.assert_called_once_with("qstat")
-        tail_mock.assert_called_once_with(".cluster_status/123.exit",
-                                          num_lines=1)
+        tail_mock.assert_called_once_with(
+            ".cluster_status/123.exit", num_lines=1)
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=1)
     @patch.object(
@@ -158,17 +181,15 @@ class TestStatusChecker(unittest.TestCase):
     @patch.object(
         CookieCutter, "get_stat_dir", return_value=".cluster_status")
     @patch.object(OSLayer, "tail", return_value=([b'1']))
-    @patch.object(OSLayer, "run_process", return_value=(1, "", ""))
-    def test_get_status_qstat_fail_using_log_job_status_is_failed(
-        self, run_process_mock, tail_mock, *othermocks
+    def test_get_status_cluster_log_says_process_is_1_failed(
+        self, tail_mock, *othermocks
     ):
         uge_status_checker = StatusChecker(123)
         actual = uge_status_checker.get_status()
         expected = "failed"
         self.assertEqual(actual, expected)
-        run_process_mock.assert_called_once_with("qstat")
-        tail_mock.assert_called_once_with(".cluster_status/123.exit",
-                                          num_lines=1)
+        tail_mock.assert_called_once_with(
+            ".cluster_status/123.exit", num_lines=1)
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=4)
     @patch.object(OSLayer, "run_process", return_value=(0, "", ""))
@@ -179,6 +200,41 @@ class TestStatusChecker(unittest.TestCase):
         self.assertRaises(
             QstatError, uge_status_checker._query_status_using_qstat)
         run_process_mock.assert_called_once_with("qstat")
+
+    @patch.object(
+        CookieCutter, "get_stat_dir", return_value=".cluster_status")
+    @patch.object(CookieCutter, "get_max_qstat_checks", return_value=4)
+    @patch.object(OSLayer, "tail", side_effect=FileNotFoundError)
+    def test_query_status_no_statlog_raises_FileNotFoundError(
+        self, tail_mock, *othermocks
+    ):
+        uge_status_checker = StatusChecker(123)
+        self.assertRaises(
+            FileNotFoundError,
+            uge_status_checker._query_status_using_cluster_log)
+        tail_mock.assert_called_once_with(
+            '.cluster_status/123.exit', num_lines=1)
+
+    @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
+    @patch.object(
+        CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(
+        CookieCutter, "get_stat_dir", return_value=".cluster_status")
+    @patch.object(OSLayer, "tail", side_effect=FileNotFoundError)
+    @patch.object(OSLayer, "run_process", side_effect=QstatError)
+    def test_get_status_fails_third_job_status_is_failed(
+        self, run_process_mock, tail_mock, *othermocks
+    ):
+        uge_status_checker = StatusChecker(123)
+        actual = uge_status_checker.get_status()
+        expected = "failed"
+        self.assertEqual(actual, expected)
+        assert_called_n_times_with_same_args(
+            tail_mock, 3, [".cluster_status/123.exit"] * 3
+        )
+        assert_called_n_times_with_same_args(
+            run_process_mock, 3, ["qstat"] * 3
+        )
 
 
 if __name__ == "__main__":

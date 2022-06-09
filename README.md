@@ -54,7 +54,7 @@ mkdir -p "${HOME}/.config/snakemake"
 
 Then use cookiecutter to create the profile in the config directory:
 ```bash
-cookiecutter --output-dir "${HOME}/.config/snakemake"  "gh:meyer-lab-cshl/snakemake-uge"
+cookiecutter --output-dir "${HOME}/.config/snakemake"  "gh:shjenkins94/snakemake-uge"
 ```
 
 The latter command will prompt you to set default parameters described in
