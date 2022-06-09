@@ -185,7 +185,7 @@ class Submitter:
 
     @property
     def queue_cmd(self) -> str:
-        return "-q {}".format(self.queue) if self.queue else ""
+        return "-l {}".format(self.queue) if self.queue else ""
 
     @property
     def rule_specific_params(self) -> str:
@@ -217,8 +217,7 @@ class Submitter:
 
     def _submit_cmd_and_get_external_job_id(self) -> int:
         returncode, output_stream, error_stream = OSLayer.run_process(self.submit_cmd)
-        jobid = re.search(r"Your job (\d*) ", output_stream)
-        return int(jobid.group(1))
+        return int(output_stream)
 # HERE IS THE PROBLEM REMOVE OUTLOG FROM EVERYTHING
     # def _get_parameters_to_status_script(self, external_job_id: int) -> str:
     #     return "{external_job_id} {outlog}".format(
