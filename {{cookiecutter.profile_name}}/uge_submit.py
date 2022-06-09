@@ -22,11 +22,14 @@ else:
 
 PathLike = Union[str, Path]
 
+
 class QsubInvocationError(Exception):
     pass
 
+
 class JobidNotFoundError(Exception):
     pass
+
 
 class Submitter:
     def __init__(
@@ -47,7 +50,6 @@ class Submitter:
         self._job_properties = read_job_properties(self._jobscript)
         self.uge_config = uge_config
 
-
     @property
     def jobscript(self) -> str:
         return self._jobscript
@@ -62,8 +64,8 @@ class Submitter:
 
     @property
     def threads(self) -> int:
-        return self.job_properties.get("threads",
-                                       CookieCutter.get_default_threads())
+        return self.job_properties.get(
+            "threads", CookieCutter.get_default_threads())
 
     @property
     def resources(self) -> dict:
@@ -94,18 +96,18 @@ class Submitter:
     def resources_cmd(self) -> str:
         mem_in_cluster_units = self.mem_mb.to(self.memory_units)
         if self.threads > 1:
-            res_cmd = "-pe mpi {threads} ".format(threads=self.threads)
+            res_cmd = f"-pe mpi {self.threads} "
             per_thread = round(mem_in_cluster_units.value / self.threads, 2)
             per_thread = math.ceil(per_thread)
         else:
             res_cmd = ""
             per_thread = math.ceil(mem_in_cluster_units.value)
-        res_cmd += "-l h_vmem={per_thread}G ".format(per_thread=per_thread)
-        res_cmd += "-l m_mem_free={per_thread}G".format(per_thread=per_thread)
+        res_cmd += f"-l h_vmem={per_thread}G "
+        res_cmd += f"-l m_mem_free={per_thread}G"
         if self.runtime:
-            hrs = self.runtime // 60
-            mins = runtime % 60
-            res_cmd += " -l h_rt={hours}:{min}:00".format(hours=hrs, mins=mins)
+            hours = self.runtime // 60
+            mins = self.runtime % 60
+            res_cmd += f" -l h_rt={hours}:{mins}:00"
         return res_cmd
 
     @property
@@ -115,7 +117,8 @@ class Submitter:
     @property
     def wildcards_str(self) -> str:
         return (
-            (".".join("{}".format(v) for v in self.wildcards.values())).replace('/', '-')
+            (".".join(f"{v}" for v in self.wildcards.values())).replace(
+                '/', '-')
             or "unique"
         )
 
@@ -136,13 +139,10 @@ class Submitter:
     @property
     def jobname(self) -> str:
         if self.is_group_jobtype:
-            return "{groupid}_{jobid}".format(groupid=self.groupid,
-                                              jobid=self.jobid)
+            return f"{self.groupid}_{self.jobid}"
         return self.cluster.get(
             "jobname",
-            "smk.{rule_name}.{wildcards_str}".format(
-                rule_name=self.rule_name, wildcards_str=self.wildcards_str
-            ),
+            f"smk.{self.rule_name}.{self.wildcards_str}",
         )
 
     @property
@@ -155,29 +155,26 @@ class Submitter:
     def logdir(self) -> Path:
         project_logdir = CookieCutter.get_log_dir()
         return Path(project_logdir) / self.rule_name
-        
+
 # HERE IS THE PROBLEM REMOVE OUTLOG FROM EVERYTHING
 # Here it's not a problem, it's just the name of a file like errlog
     @property
     def outlog(self) -> Path:
         if self.is_group_jobtype:
-            return self.logdir / "groupid{groupid}_jobid{jobid}.out".format(
-                groupid=self.groupid, jobid=self.jobid)
-        return self.logdir / "{jobname}.out".format(jobname=self.jobname)
+            return self.logdir / f"groupid{self.groupid}_jobid{self.jobid}.out"
+        return self.logdir / f"{self.jobname}.out"
 
     @property
     def errlog(self) -> Path:
         if self.is_group_jobtype:
-            return self.logdir / "groupid{groupid}_jobid{jobid}.err".format(
-                groupid=self.groupid, jobid=self.jobid)
-        return self.logdir / "{jobname}.err".format(jobname=self.jobname)
+            return self.logdir / f"groupid{self.groupid}_jobid{self.jobid}.err"
+        return self.logdir / f"{self.jobname}.err"
+
 # HERE IS THE PROBLEM REMOVE OUTLOG FROM EVERYTHING
 # Here should also not be a problem.
     @property
     def jobinfo_cmd(self) -> str:
-        return '-o "{out_log}" -e "{err_log}" -N "{jobname}"'.format(
-            out_log=self.outlog, err_log=self.errlog, jobname=self.jobname
-        )
+        return f'-o "{self.outlog}" -e "{self.errlog}" -N "{self.jobname}"'
 
     @property
     def queue(self) -> str:
@@ -185,7 +182,7 @@ class Submitter:
 
     @property
     def queue_cmd(self) -> str:
-        return "-l {}".format(self.queue) if self.queue else ""
+        return f"-l {self.queue}" if self.queue else ""
 
     @property
     def rule_specific_params(self) -> str:
@@ -217,6 +214,8 @@ class Submitter:
 
     def _submit_cmd_and_get_external_job_id(self) -> int:
         returncode, output_stream, error_stream = OSLayer.run_process(self.submit_cmd)
+        if not output_stream:
+            raise JobidNotFoundError("Job ID not found error.")
         return int(output_stream)
 # HERE IS THE PROBLEM REMOVE OUTLOG FROM EVERYTHING
     # def _get_parameters_to_status_script(self, external_job_id: int) -> str:
@@ -229,9 +228,6 @@ class Submitter:
         self._remove_previous_logs()
         try:
             external_job_id = self._submit_cmd_and_get_external_job_id()
-            # parameters_to_status_script = self._get_parameters_to_status_script(
-            #     external_job_id
-            # )
             OSLayer.print(external_job_id)
         except subprocess.CalledProcessError as error:
             raise QsubInvocationError(error)

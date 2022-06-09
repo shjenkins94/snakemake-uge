@@ -49,9 +49,7 @@ class Unit(Enum):
                 scale.metric_suffix for scale in SCALE_MAP.values()
             )
             raise InvalidSuffix(
-                "{suffix}. Valid suffixes are: {valid_suffixes}".format(
-                    suffix=suffix, valid_suffixes=valid_suffixes
-                )
+                f"{suffix}. Valid suffixes are: {valid_suffixes}"
             )
         return Unit(SCALE_MAP[first_letter])
 
@@ -64,9 +62,8 @@ class Unit(Enum):
             valid_powers.append(scale.power)
 
         raise InvalidPower(
-            "{power}. Valid powers are: {valid}".format(
-                power=power, valid=",".join(str(p) for p in valid_powers)
-            )
+            f"{power}. "
+            f"Valid powers are: {','.join(str(p) for p in valid_powers)}"
         )
 
     @property
@@ -97,7 +94,7 @@ class Memory:
             if isinstance(self.value, int) or self.value.is_integer()
             else self.value
         )
-        return "{val}{sfx}".format(val=val, sfx=self.suffix)
+        return f"{val}{self.suffix}"
 
     @property
     def power(self) -> int:
@@ -108,7 +105,10 @@ class Memory:
         return self.unit.suffix
 
     def _scaling_factor(self, decimal: bool = True) -> int:
-        return self._decimal_scaling_factor if decimal else self._binary_scaling_factor
+        if decimal:
+            return self._decimal_scaling_factor
+        else:
+            return self._binary_scaling_factor
 
     def bytes(self, decimal_multiples: bool = True) -> float:
         scaling_factor = self._scaling_factor(decimal_multiples)
@@ -123,15 +123,16 @@ class Memory:
 
     @staticmethod
     def from_str(s: str) -> "Memory":
-        valid_suffixes = "".join(scale.metric_suffix for scale in SCALE_MAP.values())
+        val_suff = "".join(scale.metric_suffix for scale in SCALE_MAP.values())
         regex = re.compile(
-            r"^(?P<size>[0-9]*\.?[0-9]+)\s*(?P<sfx>[{}]B?)?$".format(valid_suffixes),
+            fr"^(?P<size>[0-9]*\.?[0-9]+)\s*(?P<sfx>[{val_suff}]B?)?$",
             re.IGNORECASE,
         )
         match = regex.search(s)
 
         if not match:
-            raise InvalidMemoryString("{s} is an invalid memory string.".format(s=s))
+            raise InvalidMemoryString(
+                f"{s} is an invalid memory string.")
 
         size = float(match.group("size"))
         suffix = match.group("sfx") or "B"
