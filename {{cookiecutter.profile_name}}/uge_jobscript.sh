@@ -10,11 +10,11 @@ echo "-----------------------------"
 
 # run the job command
 ( {exec_job} )
-echo $? > {{cookiecutter.default_cluster_statdir}}/${JOB_ID}.exit #Store exit status in a file
+echo $? > {{cookiecutter.default_cluster_statdir}}/$JOB_ID.exit #Store exit status in a file
 
 # print exit status
 echo "-----------------------------"
-printf "Exit Status: " | cat - {{cookiecutter.default_cluster_statdir}}/${JOB_ID}.exit
+printf "Exit Status: " | cat - {{cookiecutter.default_cluster_statdir}}/$JOB_ID.exit
 echo "-----------------------------"
 
 # exit with captured exit status
