@@ -1,7 +1,8 @@
 # Snakemake UGE profile
+[![Snakemake](https://img.shields.io/badge/snakemake-≥5.17-brightgreen.svg)](https://snakemake.bitbucket.io)
 
-The repository provides a [Snakemake profile][profile] for running jobs on a Univa Grid Engine (UGE).
-It is heavily based on the excellent [snakemake-lsf profile][lsf-profile].
+The repository provides a [Snakemake profile][profile] for running jobs on a Univa Grid Engine (UGE), specifically the one used by the [NIG Supercomputer][nig-supercomputer]
+It is heavily based on [this][meyer-profile] profile.
 
 After installation and set-up of this profile (described in detail below), snakemake can be run on a UGE
 with the simple command:
@@ -89,7 +90,9 @@ Parameter explanations as retrieved from `snakemake --help`. Parameters at the e
 
   **Default:** None
 
-  This sets the directory under which conda environments are stored.under which cluster log files are written.
+  This sets the directory under which conda environments are stored. If you
+  specify the same conda_prefix for different workflows that use the same
+  environments then they will use the same conda directory, saving on storage.
 
   ```text
     --conda-prefix DIR    Specify a directory in which the 'conda' and 
@@ -123,6 +126,8 @@ Parameter explanations as retrieved from `snakemake --help`. Parameters at the e
 
   This sets the default memory, in megabytes, for a `rule` being submitted to
   the cluster without `mem_mb` set under `resources`.
+  
+  If using Singularity/Apptainer this defaults to 4096MB per thread.
 
   See [below](#standard-rule-specific-cluster-resource-settings) for how to
   overwrite this in a `rule`.
@@ -185,7 +190,7 @@ Parameter explanations as retrieved from `snakemake --help`. Parameters at the e
 
 * `jobs`
 
-  **Default**: `500`
+  **Default**: `100`
 
   This sets the default `--cores/--jobs/-j` parameter in `snakemake`.
 
@@ -241,6 +246,9 @@ Parameter explanations as retrieved from `snakemake --help`. Parameters at the e
                         filesystem suffers from latency (default 120).
   ```
 
+
+
+
 #### Status check parameters
 The status check parameters dsecribed [here](UGE_parameters.md) should not be changed unless discussed with IT.
 The compute cluster is a shared resource and running workflow managers like snakemake submitting large amounts
@@ -288,6 +296,7 @@ The following resources can be specified within a `rule` in the Snakemake file:
 profile defaults.*
 
 ### Non-standard rule-specific cluster resource settings
+***NOTE:*** This has not been tested on the NIG Supercomputer.
 
 Since the [deprecation of cluster configuration files][config-deprecate] the
 ability to specify per-rule cluster settings is snakemake-profile-specific.
@@ -387,8 +396,8 @@ Although `-P` is provided twice, UGE uses the last instance.
 
 
 <!--Link References-->
-
-[lsf-profile]: https://github.com/Snakemake-Profiles/snakemake-lsf
+[meyer-profile]: https://github.com/meyer-lab-cshl/snakemake-uge
+[nig-supercomputer]: https://sc.ddbj.nig.ac.jp/en/
 [snakemake_params]: https://snakemake.readthedocs.io/en/stable/executing/cli.html#all-options
 [cookiecutter-repo]: https://github.com/cookiecutter/cookiecutter
 [profile]: https://snakemake.readthedocs.io/en/stable/executing/cli.html#profiles

@@ -78,6 +78,8 @@ class Submitter:
             mem_value = self.cluster.get("mem_mb")
         if not mem_value:
             mem_value = CookieCutter.get_default_mem_mb()
+        if {{cookiecutter.use_singularity}}:
+            mem_value = max(4096 * self.threads, mem_value)
 
         return Memory(mem_value, unit=Unit.MEGA)
 
@@ -103,7 +105,9 @@ class Submitter:
             res_cmd = ""
             per_thread = math.ceil(mem_in_cluster_units.value)
         res_cmd += f"-l h_vmem={per_thread}G "
-        res_cmd += f"-l m_mem_free={per_thread}G"
+        res_cmd += f"-l m_mem_free={per_thread}G "
+        res_cmd += f"-l s_vmem={per_thread}G "
+        res_cmd += f"-l mem_req={per_thread}G"
         if self.runtime:
             hours = self.runtime // 60
             mins = self.runtime % 60
