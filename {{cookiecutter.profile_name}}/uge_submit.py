@@ -199,7 +199,7 @@ class Submitter:
     @property
     def submit_cmd(self) -> str:
         params = [
-            "qsub -cwd -terse -V",
+            "qsub ",
             self.resources_cmd,
             self.jobinfo_cmd,
             self.queue_cmd,

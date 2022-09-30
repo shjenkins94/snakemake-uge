@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+#$ -cwd
+#$ -terse
+#$ -V
+#$ -S /user/bin/bash
 # properties = {properties}
 
 # Create directory to hold exit status files

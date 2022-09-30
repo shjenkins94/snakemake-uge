@@ -93,6 +93,8 @@ Parameter explanations as retrieved from `snakemake --help`. Parameters at the e
   This sets the directory under which conda environments are stored. If you
   specify the same conda_prefix for different workflows that use the same
   environments then they will use the same conda directory, saving on storage.
+  
+  ***NOTE:*** Incompatible with `use_singularity`
 
   ```text
     --conda-prefix DIR    Specify a directory in which the 'conda' and 
