@@ -4,7 +4,7 @@
 {%- if cookiecutter.use_singularity == "False" %}
 #$ -V
 {%- endif %}
-#$ -S /user/bin/bash
+#$ -S /user/bin/env bash
 # properties = {properties}
 
 # Create directory to hold exit status files
