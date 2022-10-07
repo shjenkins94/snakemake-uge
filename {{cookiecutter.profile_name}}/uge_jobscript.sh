@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #$ -cwd
 #$ -terse
+{%- if cookiecutter.use_singularity ==false %}
 #$ -V
+{%- endif %}
 #$ -S /user/bin/bash
 # properties = {properties}
 
