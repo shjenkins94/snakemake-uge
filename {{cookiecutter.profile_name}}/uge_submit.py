@@ -104,8 +104,8 @@ class Submitter:
         else:
             res_cmd = ""
             per_thread = math.ceil(mem_in_cluster_units.value)
-        res_cmd += f"-l h_vmem={per_thread}G "
-        res_cmd += f"-l m_mem_free={per_thread}G "
+        # res_cmd += f"-l h_vmem={per_thread}G "
+        # res_cmd += f"-l m_mem_free={per_thread}G "
         res_cmd += f"-l s_vmem={per_thread}G "
         res_cmd += f"-l mem_req={per_thread}G"
         if self.runtime:
@@ -219,7 +219,7 @@ class Submitter:
     def _submit_cmd_and_get_external_job_id(self) -> int:
         returncode, output_stream, error_stream = OSLayer.run_process(self.submit_cmd)
         if not output_stream:
-            raise JobidNotFoundError("Job ID not found error.")
+            raise JobidNotFoundError(f"Job ID not found error for submit command {self.submit_cmd}")
         return int(output_stream)
 # HERE IS THE PROBLEM REMOVE OUTLOG FROM EVERYTHING
     # def _get_parameters_to_status_script(self, external_job_id: int) -> str:
