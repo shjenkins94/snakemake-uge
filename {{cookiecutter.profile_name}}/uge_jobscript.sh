@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #$ -cwd
 #$ -terse
-{%- if cookiecutter.use_singularity %}
+{%- if cookiecutter.use_singularity == "False" %}
 #$ -V
 {%- endif %}
 #$ -S /user/bin/bash
