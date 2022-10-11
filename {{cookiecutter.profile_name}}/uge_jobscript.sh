@@ -24,4 +24,4 @@ printf "Exit Status: " | cat - {{cookiecutter.default_cluster_statdir}}/${{"{{JO
 echo "-----------------------------"
 
 # exit with captured exit status
-cat {{cookiecutter.default_cluster_statdir}}/${{"{{JOB_ID}}"}}.exit | exit -
+exit $(<{{cookiecutter.default_cluster_statdir}}/${{"{{JOB_ID}}"}}.exit)
