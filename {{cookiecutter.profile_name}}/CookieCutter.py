@@ -5,7 +5,7 @@ class CookieCutter:
 
     @staticmethod
     def get_use_singularity() -> bool:
-        return bool("{{cookiecutter.use_singularity}}")
+        return {{cookiecutter.use_singularity}}
 
     @staticmethod
     def get_default_threads() -> int:
