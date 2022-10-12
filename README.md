@@ -21,15 +21,17 @@ The profile takes care of job submission and status checks. Rule specific parame
 
 
 # Table of Contents
-- [Install](#install)
-  - [Dependencies](#dependencies)
-  - [Profile](#profile)
-    - [Submission parameters](#submission-parameters)
-    - [Status check parameters](#status-check-parameters)
-- [Usage](#usage)
-  - [Standard rule-specific cluster resource settings](#standard-rule-specific-cluster-resource-settings)
-  - [Non-standard rule-specific cluster resource settings](#non-standard-rule-specific-cluster-resource-settings)
-- [Examples](#examples)
+- [Snakemake UGE profile](#snakemake-uge-profile)
+- [Table of Contents](#table-of-contents)
+  - [Install](#install)
+    - [Dependencies](#dependencies)
+    - [Profile](#profile)
+      - [Submission parameters](#submission-parameters)
+      - [Status check parameters](#status-check-parameters)
+  - [Usage](#usage)
+    - [Standard rule-specific cluster resource settings](#standard-rule-specific-cluster-resource-settings)
+    - [Non-standard rule-specific cluster resource settings](#non-standard-rule-specific-cluster-resource-settings)
+    - [Examples](#examples)
 
 ## Install
 

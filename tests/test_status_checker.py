@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import patch
 
-from tests.src.OSLayer import OSLayer
-from tests.src.CookieCutter import CookieCutter
-from tests.src.uge_status import StatusChecker, QstatError
+from .src.OSLayer import OSLayer
+from .src.CookieCutter import CookieCutter
+from .src.uge_status import StatusChecker, QstatError
 
 
 def assert_called_n_times_with_same_args(mock, n, args):

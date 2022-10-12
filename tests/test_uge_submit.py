@@ -1,17 +1,17 @@
 import json
 import tempfile
 import unittest
-import math
 from io import StringIO
 from pathlib import Path
 from subprocess import CalledProcessError
 from unittest.mock import patch
+from math import ceil
 
-from tests.src.CookieCutter import CookieCutter
-from tests.src.OSLayer import OSLayer
-from tests.src.uge_config import Config
-from tests.src.memory_units import Unit, Memory
-from tests.src.uge_submit import (
+from .src.CookieCutter import CookieCutter
+from .src.OSLayer import OSLayer
+from .src.uge_config import Config
+from .src.memory_units import Unit, Memory
+from .src.uge_submit import (
     Submitter,
     QsubInvocationError,
     JobidNotFoundError,
@@ -21,28 +21,29 @@ from tests.src.uge_submit import (
 class TestSubmitter(unittest.TestCase):
     @patch.object(CookieCutter, "get_log_dir", return_value="logdir")
     @patch.object(CookieCutter, "get_default_mem_mb", return_value=1000)
+    @patch.object(CookieCutter, "get_use_singularity", return_value=False)
     @patch.object(CookieCutter, "get_default_threads", return_value=8)
-    def test_getter_methods(self, *mocks):
+    def test_getter_methods(self, *othermocks):
         argv = [
             "script_name",
             "cluster_opt_1",
             "cluster_opt_2",
             "cluster_opt_3",
-            "real_jobscript.sh",
+            "tests/real_jobscript.sh",
         ]
         expected_cluster_cmd = "cluster_opt_1 cluster_opt_2 cluster_opt_3"
-        expected_jobscript = "real_jobscript.sh"
+        expected_jobscript = "tests/real_jobscript.sh"
         expected_mem = 5
         expected_threads = 4
         expected_per_thread_decimal = round(expected_mem / expected_threads, 2)
-        expected_per_thread_final = math.ceil(expected_per_thread_decimal)
+        expected_per_thread_final = ceil(expected_per_thread_decimal)
         expected_wildcards_str = "0"
         expected_rule_name = "search_fasta_on_index"
         expected_jobname = "smk.search_fasta_on_index.0"
         expected_logdir = Path("logdir") / expected_rule_name
         expected_resource_cmd = (f"-pe mpi 4 -l "
-                                 f"h_vmem={expected_per_thread_final}G "
-                                 f"-l m_mem_free={expected_per_thread_final}G")
+                                 f"s_vmem={expected_per_thread_final}G "
+                                 f"-l mem_req={expected_per_thread_final}G")
         expected_outlog = expected_logdir / f"{expected_jobname}.out"
         expected_errlog = expected_logdir / f"{expected_jobname}.err"
         expected_jobinfo_cmd = (
@@ -69,12 +70,70 @@ class TestSubmitter(unittest.TestCase):
         self.assertEqual(uge_submit.queue_cmd, "-l q1")
         self.assertEqual(
             uge_submit.submit_cmd,
-            f"qsub -cwd -terse -V -pe mpi 4 "
-            f"-l h_vmem={expected_per_thread_final}G "
-            f"-l m_mem_free={expected_per_thread_final}G "
+            f"qsub -pe mpi 4 "
+            f"-l s_vmem={expected_per_thread_final}G "
+            f"-l mem_req={expected_per_thread_final}G "
             f"{expected_jobinfo_cmd} -l q1 "
             "cluster_opt_1 cluster_opt_2 cluster_opt_3 "
-            "real_jobscript.sh"
+            "tests/real_jobscript.sh"
+        )
+
+
+    @patch.object(CookieCutter, "get_log_dir", return_value="logdir")
+    @patch.object(CookieCutter, "get_default_mem_mb", return_value=1000)
+    @patch.object(CookieCutter, "get_use_singularity", return_value=True)
+    @patch.object(CookieCutter, "get_default_threads", return_value=8)
+    def test_getter_methods_sing(self, *othermocks):
+        argv = [
+            "script_name",
+            "cluster_opt_1",
+            "cluster_opt_2",
+            "cluster_opt_3",
+            "tests/real_jobscript.sh",
+        ]
+        expected_cluster_cmd = "cluster_opt_1 cluster_opt_2 cluster_opt_3"
+        expected_jobscript = "tests/real_jobscript.sh"
+        expected_threads = 4
+        expected_per_thread = 4
+        expected_wildcards_str = "0"
+        expected_rule_name = "search_fasta_on_index"
+        expected_jobname = "smk.search_fasta_on_index.0"
+        expected_logdir = Path("logdir") / expected_rule_name
+        expected_resource_cmd = (f"-pe mpi 4 -l "
+                                 f"s_vmem={expected_per_thread}G "
+                                 f"-l mem_req={expected_per_thread}G")
+        expected_outlog = expected_logdir / f"{expected_jobname}.out"
+        expected_errlog = expected_logdir / f"{expected_jobname}.err"
+        expected_jobinfo_cmd = (
+                                f'-o "{expected_outlog}" '
+                                f'-e "{expected_errlog}" '
+                                f'-N "{expected_jobname}"'
+                                )
+
+        uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
+        self.assertEqual(uge_submit.jobscript, expected_jobscript)
+        self.assertEqual(uge_submit.cluster_cmd, expected_cluster_cmd)
+        self.assertEqual(uge_submit.threads, expected_threads)
+        self.assertEqual(uge_submit.mem_mb, Memory(5000, Unit.MEGA))
+        self.assertEqual(uge_submit.jobid, "2")
+        self.assertEqual(uge_submit.wildcards_str, expected_wildcards_str)
+        self.assertEqual(uge_submit.rule_name, expected_rule_name)
+        self.assertEqual(uge_submit.is_group_jobtype, False)
+        self.assertEqual(uge_submit.resources_cmd, expected_resource_cmd)
+        self.assertEqual(uge_submit.jobname, expected_jobname)
+        self.assertEqual(uge_submit.logdir, expected_logdir)
+        self.assertEqual(uge_submit.outlog, expected_outlog)
+        self.assertEqual(uge_submit.errlog, expected_errlog)
+        self.assertEqual(uge_submit.jobinfo_cmd, expected_jobinfo_cmd)
+        self.assertEqual(uge_submit.queue_cmd, "-l q1")
+        self.assertEqual(
+            uge_submit.submit_cmd,
+            f"qsub -pe mpi 4 "
+            f"-l s_vmem={expected_per_thread}G "
+            f"-l mem_req={expected_per_thread}G "
+            f"{expected_jobinfo_cmd} -l q1 "
+            "cluster_opt_1 cluster_opt_2 cluster_opt_3 "
+            "tests/real_jobscript.sh"
         )
 
     @patch.object(OSLayer, "run_process", return_value=("0", "8697223", "",))
@@ -89,7 +148,7 @@ class TestSubmitter(unittest.TestCase):
             "cluster_opt_1",
             "cluster_opt_2",
             "cluster_opt_3",
-            "real_jobscript.sh",
+            "tests/real_jobscript.sh",
         ]
         expected = 8697223
         uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
@@ -108,7 +167,7 @@ class TestSubmitter(unittest.TestCase):
             "cluster_opt_1",
             "cluster_opt_2",
             "cluster_opt_3",
-            "real_jobscript.sh",
+            "tests/real_jobscript.sh",
         ]
         uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
         self.assertRaises(JobidNotFoundError, uge_submit.submit)
@@ -116,11 +175,12 @@ class TestSubmitter(unittest.TestCase):
     @patch.object(CookieCutter, "get_log_dir", return_value="logdir")
     @patch.object(CookieCutter, "get_default_mem_mb", return_value=1000)
     @patch.object(CookieCutter, "get_default_threads", return_value=8)
+    @patch.object(CookieCutter, "get_use_singularity", return_value=False)
     @patch.object(OSLayer, "mkdir")
     @patch.object(OSLayer, "remove_file")
     @patch.object(OSLayer, "run_process", return_value=("0", "123456", "",))
     @patch.object(OSLayer, "print")
-    def test_submit_successfull_submit(
+    def test_submit_successful_submit(
         self,
         print_mock,
         run_process_mock,
@@ -133,13 +193,13 @@ class TestSubmitter(unittest.TestCase):
             "cluster_opt_1",
             "cluster_opt_2",
             "cluster_opt_3",
-            "real_jobscript.sh",
+            "tests/real_jobscript.sh",
         ]
 
         expected_mem = 5
         expected_threads = 4
         expected_per_thread_decimal = round(expected_mem / expected_threads, 2)
-        expected_per_thread_final = math.ceil(expected_per_thread_decimal)
+        expected_per_thread_final = ceil(expected_per_thread_decimal)
         expected_wildcards_str = "0"
         expected_rule_name = "search_fasta_on_index"
         expected_jobname = f"smk.{expected_rule_name}.{expected_wildcards_str}"
@@ -159,12 +219,12 @@ class TestSubmitter(unittest.TestCase):
         remove_file_mock.assert_any_call(expected_outlog)
         remove_file_mock.assert_any_call(expected_errlog)
         run_process_mock.assert_called_once_with(
-            "qsub -cwd -terse -V -pe mpi 4 "
-            f"-l h_vmem={expected_per_thread_final}G "
-            f"-l m_mem_free={expected_per_thread_final}G "
+            "qsub -pe mpi 4 "
+            f"-l s_vmem={expected_per_thread_final}G "
+            f"-l mem_req={expected_per_thread_final}G "
             f"{expected_jobinfo_cmd} -l q1 "
             "cluster_opt_1 cluster_opt_2 cluster_opt_3 "
-            "real_jobscript.sh"
+            "tests/real_jobscript.sh"
         )
         print_mock.assert_called_once_with(123456)
 
@@ -192,7 +252,7 @@ class TestSubmitter(unittest.TestCase):
             "cluster_opt_1",
             "cluster_opt_2",
             "cluster_opt_3",
-            "real_jobscript.sh",
+            "tests/real_jobscript.sh",
         ]
         uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
         self.assertRaises(QsubInvocationError, uge_submit.submit)
@@ -217,7 +277,7 @@ class TestSubmitter(unittest.TestCase):
             "cluster_opt_1",
             "cluster_opt_2",
             "cluster_opt_3",
-            "real_jobscript.sh",
+            "tests/real_jobscript.sh",
         ]
         expected = "-l queue"
         uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
@@ -230,13 +290,14 @@ class TestSubmitter(unittest.TestCase):
     @patch.object(CookieCutter, "get_log_dir", return_value="logdir")
     @patch.object(CookieCutter, "get_default_mem_mb", return_value=1000)
     @patch.object(CookieCutter, "get_default_threads", return_value=8)
+    @patch.object(CookieCutter, "get_use_singularity", return_value=False)
     def test_rule_specific_params_are_submitted(self, *mocks):
         argv = [
             "script_name",
             "cluster_opt_1",
             "cluster_opt_2",
             "cluster_opt_3",
-            "real_jobscript.sh",
+            "tests/real_jobscript.sh",
         ]
         content = (
             "__default__:\n  - '-l queue'\n  - '-gpu -'\n"
@@ -264,15 +325,15 @@ class TestSubmitter(unittest.TestCase):
         expected_mem = 5
         expected_threads = 4
         expected_per_thread_decimal = round(expected_mem / expected_threads, 2)
-        expected_per_thread_final = math.ceil(expected_per_thread_decimal)
+        expected_per_thread_final = ceil(expected_per_thread_decimal)
         expected = (
-            "qsub -cwd -terse -V -pe mpi 4 "
-            f"-l h_vmem={expected_per_thread_final}G "
-            f"-l m_mem_free={expected_per_thread_final}G "
+            "qsub -pe mpi 4 "
+            f"-l s_vmem={expected_per_thread_final}G "
+            f"-l mem_req={expected_per_thread_final}G "
             f"{expected_jobinfo_cmd} -l q1 "
             "cluster_opt_1 cluster_opt_2 cluster_opt_3 "
             "-l queue -gpu - -P project "
-            "real_jobscript.sh"
+            "tests/real_jobscript.sh"
         )
         actual = uge_submit.submit_cmd
 

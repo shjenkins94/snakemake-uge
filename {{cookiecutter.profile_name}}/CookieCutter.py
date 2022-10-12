@@ -4,6 +4,10 @@ class CookieCutter:
     """
 
     @staticmethod
+    def get_use_singularity() -> bool:
+        return bool("{{cookiecutter.use_singularity}}")
+
+    @staticmethod
     def get_default_threads() -> int:
         return int("{{cookiecutter.default_threads}}")
 

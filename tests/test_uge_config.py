@@ -1,5 +1,5 @@
 from io import StringIO
-from tests.src.uge_config import Config
+from .src.uge_config import Config
 
 
 class TestBool:
