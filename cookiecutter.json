@@ -8,6 +8,7 @@
     "use_singularity": true,
     "default_queue": "",
     "keep_going": false,
+    "cluster_cancel": "qdel",
     "print_shell_commands": true,
     "jobs": 100,
     "default_threads": 1,

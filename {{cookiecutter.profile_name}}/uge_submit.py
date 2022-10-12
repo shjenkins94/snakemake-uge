@@ -104,7 +104,7 @@ class Submitter:
         else:
             res_cmd = ""
             per_thread = math.ceil(mem_in_cluster_units.value)
-        # res_cmd += f"-l h_vmem={per_thread}G "
+        res_cmd += f"-l h_vmem={per_thread}G "
         # res_cmd += f"-l m_mem_free={per_thread}G "
         res_cmd += f"-l s_vmem={per_thread}G "
         res_cmd += f"-l mem_req={per_thread}G"

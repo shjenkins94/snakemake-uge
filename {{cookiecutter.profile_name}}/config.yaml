@@ -7,6 +7,9 @@ directory: "{{cookiecutter.directory}}"
 {%- if cookiecutter.conda_prefix != "" %}
 conda-prefix: "{{cookiecutter.conda_prefix}}"
 {%- endif %}
+{%- if cookiecutter.cluster_cancel != "" %}
+cluster-cancel: "{{cookiecutter.cluster_cancel}}"
+{%- endif %}
 restart-times: "{{cookiecutter.restart_times}}"
 use-conda: "{{cookiecutter.use_conda}}"
 use-singularity: "{{cookiecutter.use_singularity}}"
