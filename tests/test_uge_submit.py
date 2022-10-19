@@ -83,7 +83,66 @@ class TestSubmitter(unittest.TestCase):
     @patch.object(CookieCutter, "get_default_mem_mb", return_value=1000)
     @patch.object(CookieCutter, "get_use_singularity", return_value=True)
     @patch.object(CookieCutter, "get_default_threads", return_value=8)
-    def test_getter_methods_sing(self, *othermocks):
+    def test_sing_low(self, *othermocks):
+        argv = [
+            "script_name",
+            "cluster_opt_1",
+            "cluster_opt_2",
+            "cluster_opt_3",
+            "tests/real_jobscript_high.sh",
+        ]
+        expected_cluster_cmd = "cluster_opt_1 cluster_opt_2 cluster_opt_3"
+        expected_jobscript = "tests/real_jobscript_high.sh"
+        expected_mem = 64
+        expected_threads = 4
+        expected_per_thread_decimal = round(expected_mem / expected_threads, 2)
+        expected_per_thread_final = ceil(expected_per_thread_decimal)
+        expected_wildcards_str = "0"
+        expected_rule_name = "search_fasta_on_index"
+        expected_jobname = "smk.search_fasta_on_index.0"
+        expected_logdir = Path("logdir") / expected_rule_name
+        expected_resource_cmd = (f"-pe mpi 4 -l "
+                                 f"s_vmem={expected_per_thread_final}G "
+                                 f"-l mem_req={expected_per_thread_final}G")
+        expected_outlog = expected_logdir / f"{expected_jobname}.out"
+        expected_errlog = expected_logdir / f"{expected_jobname}.err"
+        expected_jobinfo_cmd = (
+                                f'-o "{expected_outlog}" '
+                                f'-e "{expected_errlog}" '
+                                f'-N "{expected_jobname}"'
+                                )
+
+        uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
+        self.assertEqual(uge_submit.jobscript, expected_jobscript)
+        self.assertEqual(uge_submit.cluster_cmd, expected_cluster_cmd)
+        self.assertEqual(uge_submit.threads, expected_threads)
+        self.assertEqual(uge_submit.mem_mb, Memory(64000, Unit.MEGA))
+        self.assertEqual(uge_submit.jobid, "2")
+        self.assertEqual(uge_submit.wildcards_str, expected_wildcards_str)
+        self.assertEqual(uge_submit.rule_name, expected_rule_name)
+        self.assertEqual(uge_submit.is_group_jobtype, False)
+        self.assertEqual(uge_submit.resources_cmd, expected_resource_cmd)
+        self.assertEqual(uge_submit.jobname, expected_jobname)
+        self.assertEqual(uge_submit.logdir, expected_logdir)
+        self.assertEqual(uge_submit.outlog, expected_outlog)
+        self.assertEqual(uge_submit.errlog, expected_errlog)
+        self.assertEqual(uge_submit.jobinfo_cmd, expected_jobinfo_cmd)
+        self.assertEqual(uge_submit.queue_cmd, "-l q1")
+        self.assertEqual(
+            uge_submit.submit_cmd,
+            f"qsub -pe mpi 4 "
+            f"-l s_vmem={expected_per_thread_final}G "
+            f"-l mem_req={expected_per_thread_final}G "
+            f"{expected_jobinfo_cmd} -l q1 "
+            "cluster_opt_1 cluster_opt_2 cluster_opt_3 "
+            "tests/real_jobscript_high.sh"
+        )
+
+    @patch.object(CookieCutter, "get_log_dir", return_value="logdir")
+    @patch.object(CookieCutter, "get_default_mem_mb", return_value=1000)
+    @patch.object(CookieCutter, "get_use_singularity", return_value=True)
+    @patch.object(CookieCutter, "get_default_threads", return_value=8)
+    def test_sing_high(self, *othermocks):
         argv = [
             "script_name",
             "cluster_opt_1",
