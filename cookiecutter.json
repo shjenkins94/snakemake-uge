@@ -10,6 +10,7 @@
     "keep_going": false,
     "cluster_cancel": "qdel",
     "print_shell_commands": true,
+    "rerun_incomplete": true,
     "jobs": 100,
     "default_threads": 1,
     "default_cluster_logdir": "cluster_logs",
