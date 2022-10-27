@@ -192,6 +192,19 @@ Parameter explanations as retrieved from `snakemake --help`. Parameters at the e
     --printshellcmds, -p  Print out the shell commands that will be executed.
     ```
 
+* `rerun-incomplete`
+
+  **Default**: `True`
+  **Valid options:** `False`, `True`
+
+  This sets the default ` --rerun-incomplete/--ri` parameter in `snakemake`.
+  Setting this to true stops snakemake from retrying jobs that have already been killed by UGE.
+
+  ```text
+    --rerun-incomplete --ri  Re-run all jobs the output of which is recognized as incomplete. (default: False)
+    ```
+
+
 * `jobs`
 
   **Default**: `100`
