@@ -70,6 +70,10 @@ class Submitter:
     @property
     def resources(self) -> dict:
         return self.job_properties.get("resources", dict())
+    
+    @property
+    def pe(self) -> str:
+        return self.resources.get("pe", "def_slot")
 
     @property
     def mem_mb(self) -> Memory:
@@ -95,7 +99,7 @@ class Submitter:
     def resources_cmd(self) -> str:
         mem_in_cluster_units = self.mem_mb.to(self.memory_units)
         if self.threads > 1:
-            res_cmd = f"-pe mpi {self.threads} "
+            res_cmd = f"-pe {self.pe} {self.threads} "
             per_thread = round(mem_in_cluster_units.value / self.threads, 2)
             per_thread = math.ceil(per_thread)
         else:
