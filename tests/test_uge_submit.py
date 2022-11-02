@@ -52,7 +52,7 @@ class TestSubmitter(unittest.TestCase):
                                 f'-N "{expected_jobname}"'
                                 )
 
-        uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
+        uge_submit = Submitter(jobscript=argv[-1], cluster_args=argv[1:-1])
         self.assertEqual(uge_submit.jobscript, expected_jobscript)
         self.assertEqual(uge_submit.cluster_cmd, expected_cluster_cmd)
         self.assertEqual(uge_submit.threads, expected_threads)
@@ -101,7 +101,7 @@ class TestSubmitter(unittest.TestCase):
         expected_rule_name = "search_fasta_on_index"
         expected_jobname = "smk.search_fasta_on_index.0"
         expected_logdir = Path("logdir") / expected_rule_name
-        expected_resource_cmd = (f"-pe mpi 4 -l "
+        expected_resource_cmd = (f"-pe def_slot 4 -l "
                                  f"s_vmem={expected_per_thread_final}G "
                                  f"-l mem_req={expected_per_thread_final}G")
         expected_outlog = expected_logdir / f"{expected_jobname}.out"
@@ -112,7 +112,7 @@ class TestSubmitter(unittest.TestCase):
                                 f'-N "{expected_jobname}"'
                                 )
 
-        uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
+        uge_submit = Submitter(jobscript=argv[-1], cluster_args=argv[1:-1])
         self.assertEqual(uge_submit.jobscript, expected_jobscript)
         self.assertEqual(uge_submit.cluster_cmd, expected_cluster_cmd)
         self.assertEqual(uge_submit.threads, expected_threads)
@@ -130,7 +130,7 @@ class TestSubmitter(unittest.TestCase):
         self.assertEqual(uge_submit.queue_cmd, "-l q1")
         self.assertEqual(
             uge_submit.submit_cmd,
-            f"qsub -pe mpi 4 "
+            f"qsub -pe def_slot 4 "
             f"-l s_vmem={expected_per_thread_final}G "
             f"-l mem_req={expected_per_thread_final}G "
             f"{expected_jobinfo_cmd} -l q1 "
@@ -169,7 +169,7 @@ class TestSubmitter(unittest.TestCase):
                                 f'-N "{expected_jobname}"'
                                 )
 
-        uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
+        uge_submit = Submitter(jobscript=argv[-1], cluster_args=argv[1:-1])
         self.assertEqual(uge_submit.jobscript, expected_jobscript)
         self.assertEqual(uge_submit.cluster_cmd, expected_cluster_cmd)
         self.assertEqual(uge_submit.threads, expected_threads)
@@ -210,7 +210,7 @@ class TestSubmitter(unittest.TestCase):
             "tests/real_jobscript.sh",
         ]
         expected = 8697223
-        uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
+        uge_submit = Submitter(jobscript=argv[-1], cluster_args=argv[1:-1])
         actual = uge_submit._submit_cmd_and_get_external_job_id()
         self.assertEqual(actual, expected)
 
@@ -228,7 +228,7 @@ class TestSubmitter(unittest.TestCase):
             "cluster_opt_3",
             "tests/real_jobscript.sh",
         ]
-        uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
+        uge_submit = Submitter(jobscript=argv[-1], cluster_args=argv[1:-1])
         self.assertRaises(JobidNotFoundError, uge_submit.submit)
 
     @patch.object(CookieCutter, "get_log_dir", return_value="logdir")
@@ -270,7 +270,7 @@ class TestSubmitter(unittest.TestCase):
                                 f'-e "{expected_errlog}" '
                                 f'-N "{expected_jobname}"'
                                 )
-        uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
+        uge_submit = Submitter(jobscript=argv[-1], cluster_args=argv[1:-1])
         uge_submit.submit()
 
         self.assertEqual(remove_file_mock.call_count, 2)
@@ -313,7 +313,7 @@ class TestSubmitter(unittest.TestCase):
             "cluster_opt_3",
             "tests/real_jobscript.sh",
         ]
-        uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
+        uge_submit = Submitter(jobscript=argv[-1], cluster_args=argv[1:-1])
         self.assertRaises(QsubInvocationError, uge_submit.submit)
 
         expected_wildcards_str = "0"
@@ -339,7 +339,7 @@ class TestSubmitter(unittest.TestCase):
             "tests/real_jobscript.sh",
         ]
         expected = "-l queue"
-        uge_submit = Submitter(jobscript=argv[-1], cluster_cmds=argv[1:-1])
+        uge_submit = Submitter(jobscript=argv[-1], cluster_args=argv[1:-1])
         # sorry, hacky but couldn't figure out how to mock read_job_properties
         del uge_submit._job_properties["cluster"]
         actual = uge_submit.queue_cmd
@@ -366,7 +366,7 @@ class TestSubmitter(unittest.TestCase):
         uge_config = Config.from_stream(stream)
         uge_submit = Submitter(
             jobscript=argv[-1],
-            cluster_cmds=argv[1:-1],
+            cluster_args=argv[1:-1],
             uge_config=uge_config,
         )
 
