@@ -30,10 +30,7 @@ class OSLayer:
     @staticmethod
     def run_process(cmd: str) -> Tuple[stdout, stderr]:
         completed_process = subprocess.run(
-            cmd, check=False,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
+            cmd, check=False, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
         )
         return (
             completed_process.returncode,

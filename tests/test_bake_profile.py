@@ -19,6 +19,7 @@ def bake_in_temp_dir(cookies, *args, **kwargs):
     finally:
         rmtree(str(result.project_path))
 
+
 def test_bake_custom_project(cookies):
     """Test for 'cookiecutter-template'."""
     result = cookies.bake()

@@ -1,10 +1,4 @@
 #!/usr/bin/env bash
-#$ -cwd
-#$ -terse
-{%- if cookiecutter.use_singularity == "False" %}
-#$ -V
-{%- endif %}
-#$ -S /bin/bash
 # properties = {properties}
 
 # Create directory to hold exit status files

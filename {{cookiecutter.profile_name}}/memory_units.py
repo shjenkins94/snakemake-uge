@@ -48,9 +48,7 @@ class Unit(Enum):
             valid_suffixes = ",".join(
                 scale.metric_suffix for scale in SCALE_MAP.values()
             )
-            raise InvalidSuffix(
-                f"{suffix}. Valid suffixes are: {valid_suffixes}"
-            )
+            raise InvalidSuffix(f"{suffix}. Valid suffixes are: {valid_suffixes}")
         return Unit(SCALE_MAP[first_letter])
 
     @staticmethod
@@ -62,8 +60,7 @@ class Unit(Enum):
             valid_powers.append(scale.power)
 
         raise InvalidPower(
-            f"{power}. "
-            f"Valid powers are: {','.join(str(p) for p in valid_powers)}"
+            f"{power}. " f"Valid powers are: {','.join(str(p) for p in valid_powers)}"
         )
 
     @property
@@ -112,7 +109,7 @@ class Memory:
 
     def bytes(self, decimal_multiples: bool = True) -> float:
         scaling_factor = self._scaling_factor(decimal_multiples)
-        return float(self.value * (scaling_factor ** self.power))
+        return float(self.value * (scaling_factor**self.power))
 
     def to(self, unit: Unit, decimal_multiples: bool = True) -> "Memory":
         scaling_factor = self._scaling_factor(decimal_multiples) ** unit.power
@@ -125,14 +122,13 @@ class Memory:
     def from_str(s: str) -> "Memory":
         val_suff = "".join(scale.metric_suffix for scale in SCALE_MAP.values())
         regex = re.compile(
-            fr"^(?P<size>[0-9]*\.?[0-9]+)\s*(?P<sfx>[{val_suff}]B?)?$",
+            rf"^(?P<size>[0-9]*\.?[0-9]+)\s*(?P<sfx>[{val_suff}]B?)?$",
             re.IGNORECASE,
         )
         match = regex.search(s)
 
         if not match:
-            raise InvalidMemoryString(
-                f"{s} is an invalid memory string.")
+            raise InvalidMemoryString(f"{s} is an invalid memory string.")
 
         size = float(match.group("size"))
         suffix = match.group("sfx") or "B"
