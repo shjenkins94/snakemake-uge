@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import patch
 
-from .src.OSLayer import OSLayer
-from .src.CookieCutter import CookieCutter
-from .src.uge_status import StatusChecker, QstatError
+from tests.src.OSLayer import OSLayer
+from tests.src.CookieCutter import CookieCutter
+from tests.src.uge_status import StatusChecker, QstatError
 
 
 def assert_called_n_times_with_same_args(mock, n, args):
@@ -14,8 +14,10 @@ def assert_called_n_times_with_same_args(mock, n, args):
 
 
 def qstat_line(status) -> str:
-    line = (f"  123 0.0 job user  {status}    06/09/2022 14:49:50             "
-            "                                                      1        ")
+    line = (
+        f"  123 0.0 job user  {status}    06/09/2022 14:49:50             "
+        "                                                      1        "
+    )
     return line
 
 
@@ -29,10 +31,8 @@ class TestStatusChecker(unittest.TestCase):
         self.assertEqual(actual, expected)
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
-    @patch.object(
-        OSLayer, "run_process", return_value=(0, qstat_line("r"), ""))
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(OSLayer, "run_process", return_value=(0, qstat_line("r"), ""))
     def test_get_status_qstat_says_process_is_r_job_status_is_running(
         self, run_process_mock, *othermocks
     ):
@@ -43,10 +43,8 @@ class TestStatusChecker(unittest.TestCase):
         run_process_mock.assert_called_once_with("qstat")
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
-    @patch.object(
-        OSLayer, "run_process", return_value=(0, qstat_line("t"), ""))
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(OSLayer, "run_process", return_value=(0, qstat_line("t"), ""))
     def test_get_status_qstat_says_process_is_t_job_status_is_running(
         self, run_process_mock, *othermocks
     ):
@@ -57,10 +55,8 @@ class TestStatusChecker(unittest.TestCase):
         run_process_mock.assert_called_once_with("qstat")
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
-    @patch.object(
-        OSLayer, "run_process", return_value=(0, qstat_line("s"), ""))
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(OSLayer, "run_process", return_value=(0, qstat_line("s"), ""))
     def test_get_status_qstat_says_process_is_s_job_status_is_running(
         self, run_process_mock, *othermocks
     ):
@@ -71,10 +67,8 @@ class TestStatusChecker(unittest.TestCase):
         run_process_mock.assert_called_once_with("qstat")
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
-    @patch.object(
-        OSLayer, "run_process", return_value=(0, qstat_line("qw"), ""))
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(OSLayer, "run_process", return_value=(0, qstat_line("qw"), ""))
     def test_get_status_qstat_says_process_is_qw_job_status_is_running(
         self, run_process_mock, *othermocks
     ):
@@ -85,10 +79,8 @@ class TestStatusChecker(unittest.TestCase):
         run_process_mock.assert_called_once_with("qstat")
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
-    @patch.object(
-        OSLayer, "run_process", return_value=(0, qstat_line("d"), ""))
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(OSLayer, "run_process", return_value=(0, qstat_line("d"), ""))
     def test_get_status_qstat_says_process_is_d_job_status_is_failed(
         self, run_process_mock, *othermocks
     ):
@@ -99,10 +91,8 @@ class TestStatusChecker(unittest.TestCase):
         run_process_mock.assert_called_once_with("qstat")
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
-    @patch.object(
-        OSLayer, "run_process", return_value=(0, qstat_line("E"), ""))
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(OSLayer, "run_process", return_value=(0, qstat_line("E"), ""))
     def test_get_status_qstat_says_process_is_E_job_status_is_failed(
         self, run_process_mock, *othermocks
     ):
@@ -113,17 +103,18 @@ class TestStatusChecker(unittest.TestCase):
         run_process_mock.assert_called_once_with("qstat")
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
-    @patch.object(
-        CookieCutter, "get_stat_dir", return_value=".cluster_status")
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(CookieCutter, "get_stat_dir", return_value=".cluster_status")
     @patch.object(OSLayer, "tail", side_effect=FileNotFoundError)
     @patch.object(OSLayer, "run_process")
     def test_get_status_qstat_succeeds_third_job_status_is_success(
         self, run_process_mock, tail_mock, *othermocks
     ):
         run_process_mock.side_effect = [
-            QstatError, (0, qstat_line("test"), ""), (0, qstat_line("r"), "")]
+            QstatError,
+            (0, qstat_line("test"), ""),
+            (0, qstat_line("r"), ""),
+        ]
 
         uge_status_checker = StatusChecker(123)
         actual = uge_status_checker.get_status()
@@ -132,21 +123,17 @@ class TestStatusChecker(unittest.TestCase):
         assert_called_n_times_with_same_args(
             tail_mock, 3, [".cluster_status/123.exit"] * 3
         )
-        assert_called_n_times_with_same_args(
-            run_process_mock, 3, ["qstat"] * 3
-        )
+        assert_called_n_times_with_same_args(run_process_mock, 3, ["qstat"] * 3)
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
-    @patch.object(
-        CookieCutter, "get_stat_dir", return_value=".cluster_status")
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(CookieCutter, "get_stat_dir", return_value=".cluster_status")
     @patch.object(OSLayer, "tail")
     @patch.object(OSLayer, "run_process", side_effect=QstatError)
     def test_get_status_cluster_log_succeeds_third_job_status_is_success(
         self, run_process_mock, tail_mock, *othermocks
     ):
-        tail_mock.side_effect = [FileNotFoundError, [b'test'], [b'0']]
+        tail_mock.side_effect = [FileNotFoundError, [b"test"], [b"0"]]
 
         uge_status_checker = StatusChecker(123)
         actual = uge_status_checker.get_status()
@@ -158,12 +145,10 @@ class TestStatusChecker(unittest.TestCase):
         )
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=1)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
     @patch.object(CookieCutter, "get_latency_wait", return_value=45)
-    @patch.object(
-        CookieCutter, "get_stat_dir", return_value=".cluster_status")
-    @patch.object(OSLayer, "tail", return_value=([b'0']))
+    @patch.object(CookieCutter, "get_stat_dir", return_value=".cluster_status")
+    @patch.object(OSLayer, "tail", return_value=([b"0"]))
     def test_get_status_cluster_log_says_process_is_0_success(
         self, tail_mock, *othermocks
     ):
@@ -171,16 +156,13 @@ class TestStatusChecker(unittest.TestCase):
         actual = uge_status_checker.get_status()
         expected = "success"
         self.assertEqual(actual, expected)
-        tail_mock.assert_called_once_with(
-            ".cluster_status/123.exit", num_lines=1)
+        tail_mock.assert_called_once_with(".cluster_status/123.exit", num_lines=1)
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=1)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
     @patch.object(CookieCutter, "get_latency_wait", return_value=45)
-    @patch.object(
-        CookieCutter, "get_stat_dir", return_value=".cluster_status")
-    @patch.object(OSLayer, "tail", return_value=([b'1']))
+    @patch.object(CookieCutter, "get_stat_dir", return_value=".cluster_status")
+    @patch.object(OSLayer, "tail", return_value=([b"1"]))
     def test_get_status_cluster_log_says_process_is_1_failed(
         self, tail_mock, *othermocks
     ):
@@ -188,8 +170,7 @@ class TestStatusChecker(unittest.TestCase):
         actual = uge_status_checker.get_status()
         expected = "failed"
         self.assertEqual(actual, expected)
-        tail_mock.assert_called_once_with(
-            ".cluster_status/123.exit", num_lines=1)
+        tail_mock.assert_called_once_with(".cluster_status/123.exit", num_lines=1)
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=4)
     @patch.object(OSLayer, "run_process", return_value=(0, "", ""))
@@ -197,12 +178,10 @@ class TestStatusChecker(unittest.TestCase):
         self, run_process_mock, *othermocks
     ):
         uge_status_checker = StatusChecker(123)
-        self.assertRaises(
-            QstatError, uge_status_checker._query_status_using_qstat)
+        self.assertRaises(QstatError, uge_status_checker._query_status_using_qstat)
         run_process_mock.assert_called_once_with("qstat")
 
-    @patch.object(
-        CookieCutter, "get_stat_dir", return_value=".cluster_status")
+    @patch.object(CookieCutter, "get_stat_dir", return_value=".cluster_status")
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=4)
     @patch.object(OSLayer, "tail", side_effect=FileNotFoundError)
     def test_query_status_no_statlog_raises_FileNotFoundError(
@@ -210,16 +189,13 @@ class TestStatusChecker(unittest.TestCase):
     ):
         uge_status_checker = StatusChecker(123)
         self.assertRaises(
-            FileNotFoundError,
-            uge_status_checker._query_status_using_cluster_log)
-        tail_mock.assert_called_once_with(
-            '.cluster_status/123.exit', num_lines=1)
+            FileNotFoundError, uge_status_checker._query_status_using_cluster_log
+        )
+        tail_mock.assert_called_once_with(".cluster_status/123.exit", num_lines=1)
 
     @patch.object(CookieCutter, "get_max_qstat_checks", return_value=3)
-    @patch.object(
-        CookieCutter, "get_time_between_qstat_checks", return_value=1)
-    @patch.object(
-        CookieCutter, "get_stat_dir", return_value=".cluster_status")
+    @patch.object(CookieCutter, "get_time_between_qstat_checks", return_value=1)
+    @patch.object(CookieCutter, "get_stat_dir", return_value=".cluster_status")
     @patch.object(OSLayer, "tail", side_effect=FileNotFoundError)
     @patch.object(OSLayer, "run_process", side_effect=QstatError)
     def test_get_status_fails_third_job_status_is_failed(
@@ -232,9 +208,7 @@ class TestStatusChecker(unittest.TestCase):
         assert_called_n_times_with_same_args(
             tail_mock, 3, [".cluster_status/123.exit"] * 3
         )
-        assert_called_n_times_with_same_args(
-            run_process_mock, 3, ["qstat"] * 3
-        )
+        assert_called_n_times_with_same_args(run_process_mock, 3, ["qstat"] * 3)
 
 
 if __name__ == "__main__":

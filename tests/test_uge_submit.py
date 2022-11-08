@@ -4,8 +4,8 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import List
 from pytest_cases import parametrize, fixture
-from .src.CookieCutter import CookieCutter
-from .src.uge_submit import Submitter
+from tests.src.CookieCutter import CookieCutter
+from tests.src.uge_submit import Submitter
 
 
 def uge_sub(j_properties: str, clus_args: List[str] = None):

@@ -5,8 +5,13 @@ import sys
 import time
 from pathlib import Path
 
-from .CookieCutter import CookieCutter
-from .OSLayer import OSLayer
+if not __name__.startswith("tests.src."):
+    sys.path.append(str(Path(__file__).parent.absolute()))
+    from CookieCutter import CookieCutter
+    from OSLayer import OSLayer
+else:
+    from .CookieCutter import CookieCutter
+    from .OSLayer import OSLayer
 
 
 class QstatError(Exception):

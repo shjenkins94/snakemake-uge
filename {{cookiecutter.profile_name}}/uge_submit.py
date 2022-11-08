@@ -6,10 +6,19 @@ from pathlib import Path
 from typing import List, Union, Optional
 from math import ceil
 from snakemake.utils import read_job_properties
-from .CookieCutter import CookieCutter
-from .OSLayer import OSLayer
-from .uge_config import Config
-from .memory_units import Unit, Memory
+
+if not __name__.startswith("tests.src."):
+    sys.path.append(str(Path(__file__).parent.absolute()))
+    from CookieCutter import CookieCutter
+    from OSLayer import OSLayer
+    from uge_config import Config
+    from memory_units import Unit, Memory
+else:
+    from .CookieCutter import CookieCutter
+    from .OSLayer import OSLayer
+    from .uge_config import Config
+    from .memory_units import Unit, Memory
+
 
 PathLike = Union[str, Path]
 
