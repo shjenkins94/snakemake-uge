@@ -94,20 +94,18 @@ class TestSubmitterProperties:
     """Test that Submitter properties are correct"""
 
     @parametrize(
-        "sing,per_thread,var",
-        [(False, 2, "-V "), (True, 4, "")],
+        "sing,var",
+        [(False, "-V "), (True, "")],
         ids=["no_sing", "sing"],
     )
-    def test_full(
-        self, uge_full, jobscript_full, sing, per_thread, var, log_path, mocked_cookie
-    ):
+    def test_full(self, uge_full, jobscript_full, sing, var, log_path, mocked_cookie):
         """Test a jobscript for a single job with all properties"""
         assert uge_full.jobscript == jobscript_full
         assert uge_full.threads == 4
-        assert uge_full.per_thread == per_thread
+        assert uge_full.per_thread == 2
         assert (
-            uge_full.resource_cmd == "-pe mpi 4 -l h_rt=83:20:00 -l s_rt=83:20:00 "
-            f"-l s_vmem={per_thread}G -l mem_req={per_thread}G"
+            uge_full.resource_cmd
+            == "-pe mpi 4 -l h_rt=83:20:00 -l s_rt=83:20:00 -l s_vmem=2G -l mem_req=2G"
         )
         assert uge_full.is_group_jobtype is False
         assert uge_full.jobid == "2"
@@ -129,7 +127,7 @@ class TestSubmitterProperties:
         assert (
             uge_full.submit_cmd == f"qsub -cwd -terse -S bin/bash {var}"
             "-pe mpi 4 -l h_rt=83:20:00 -l s_rt=83:20:00 "
-            f"-l s_vmem={per_thread}G -l mem_req={per_thread}G "
+            f"-l s_vmem=2G -l mem_req=2G "
             f'-o "{log_path / rulename}/{jobname}.out" '
             f'-e "{log_path / rulename}/{jobname}.err" -N "{jobname}" '
             f"-l q1 cluster_opt_1 cluster_opt_2 cluster_opt_3 "
@@ -137,45 +135,36 @@ class TestSubmitterProperties:
         )
 
     @parametrize(
-        "sing,per_thread,var",
-        [(False, 1, "-V "), (True, 4, "")],
+        "sing,var",
+        [(False, "-V "), (True, "")],
         ids=["no_sing", "sing"],
     )
-    def test_bare(
-        self, uge_bare, jobscript_bare, sing, per_thread, var, log_path, mocked_cookie
-    ):
+    def test_bare(self, uge_bare, jobscript_bare, sing, var, log_path, mocked_cookie):
         """Test a jobscript for a single job with all properties"""
         assert uge_bare.jobscript == jobscript_bare
         assert uge_bare.threads == 1
-        assert uge_bare.per_thread == per_thread
-        assert (
-            uge_bare.resource_cmd == f"-l s_vmem={per_thread}G -l mem_req={per_thread}G"
-        )
+        assert uge_bare.per_thread == 1
+        assert uge_bare.resource_cmd == "-l s_vmem=1G -l mem_req=1G"
         rulename = "search"
         jobname = "smk.search.unique"
         assert (
             uge_bare.submit_cmd == f"qsub -cwd -terse -S bin/bash {var}"
-            f"-l s_vmem={per_thread}G -l mem_req={per_thread}G "
+            f"-l s_vmem=1G -l mem_req=1G "
             f'-o "{log_path / rulename}/{jobname}.out" '
             f'-e "{log_path / rulename}/{jobname}.err" -N "{jobname}" {jobscript_bare}'
         )
 
     @parametrize(
-        "sing,per_thread,var",
-        [(False, 9, "-V "), (True, 9, "")],
+        "sing,var",
+        [(False, "-V "), (True, "")],
         ids=["no_sing", "sing"],
     )
-    def test_high(
-        self, uge_high, jobscript_high, sing, per_thread, var, log_path, mocked_cookie
-    ):
+    def test_high(self, uge_high, jobscript_high, sing, var, log_path, mocked_cookie):
         """Test a jobscript for a single job with all properties"""
         assert uge_high.jobscript == jobscript_high
         assert uge_high.threads == 4
-        assert uge_high.per_thread == per_thread
-        assert (
-            uge_high.resource_cmd
-            == f"-pe def_slot 4 -l s_vmem={per_thread}G -l mem_req={per_thread}G"
-        )
+        assert uge_high.per_thread == 9
+        assert uge_high.resource_cmd == "-pe def_slot 4 -l s_vmem=9G -l mem_req=9G"
         assert uge_high.is_group_jobtype is True
         assert uge_high.jobid == "a9722c33"
         rulename = "mygroup"
@@ -193,7 +182,7 @@ class TestSubmitterProperties:
         assert uge_high.optional_cmd == ""
         assert (
             uge_high.submit_cmd == f"qsub -cwd -terse -S bin/bash {var}"
-            f"-pe def_slot 4 -l s_vmem={per_thread}G -l mem_req={per_thread}G "
+            f"-pe def_slot 4 -l s_vmem=9G -l mem_req=9G "
             f'-o "{log_path / rulename}/{jobname}.out" '
             f'-e "{log_path / rulename}/{jobname}.err" -N "{jobname}" '
             f"{jobscript_high}"

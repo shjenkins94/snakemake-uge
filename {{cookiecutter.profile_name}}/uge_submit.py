@@ -76,8 +76,6 @@ class Submitter:
             per_thread = ceil(mem_total.value / self.threads)
         else:
             per_thread = ceil(mem_total.value)
-        if CookieCutter.get_use_singularity():
-            per_thread = max(4, per_thread)
         return per_thread
 
     @property
