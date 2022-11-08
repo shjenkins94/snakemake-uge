@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """Creates a submitter class with job details and submits job to UGE"""
 import sys
 from subprocess import CalledProcessError
