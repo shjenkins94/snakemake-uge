@@ -100,7 +100,7 @@ class Submitter:
             runtime = int(runtime)
             hours = runtime // 60
             mins = runtime % 60
-            res_cmd += f"-l h_rt={hours}:{mins}:00 -l s_rt={hours}:{mins}:00 "
+            res_cmd += f"-l d_rt={hours}:{mins}:00 -l s_rt={hours}:{mins}:00 "
         res_cmd += f"-l s_vmem={self.per_thread}G -l mem_req={self.per_thread}G"
         return res_cmd
 
