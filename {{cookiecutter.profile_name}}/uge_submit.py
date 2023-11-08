@@ -178,7 +178,7 @@ class Submitter:
     @property
     def submit_cmd(self) -> str:
         """Format entire command for submitting job"""
-        sub_cmd = "qsub -cwd -terse -S /bin/bash "
+        sub_cmd = "qsub_beta -cwd -terse -S /bin/bash "
         if not CookieCutter.get_use_singularity():
             sub_cmd += "-V "
         sub_cmd += f"{self.resource_cmd} {self.jobinfo_cmd}"
