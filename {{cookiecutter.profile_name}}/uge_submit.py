@@ -95,7 +95,9 @@ class Submitter:
         if self.threads > 1:
             p_env = self.resources.get("pe", "def_slot")
             res_cmd += f"-pe {p_env} {self.threads} "
-        runtime = self.cluster.get("runtime")
+        runtime = self.resources.get("runtime")
+        if not runtime:
+            runtime = self.cluster.get("runtime")
         if runtime:
             runtime = int(runtime)
             hours = runtime // 60
